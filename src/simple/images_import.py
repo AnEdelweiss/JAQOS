@@ -238,18 +238,18 @@ def import_images(document_miappe,document_data,wd_experience,TimeStamp,prov_dic
         if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_fec_keys
     ]
 
-    ####TEST :
-    toutes_fec_triees = sorted(corr_data.values(), key=lambda x: x["Path"])
+    # ####TEST :
+    # toutes_fec_triees = sorted(corr_data.values(), key=lambda x: x["Path"])
     
-    # On isole les 5 premières pour le test
-    fec_test_subset = toutes_fec_triees[:2]
+    # # On isole les 5 premières pour le test
+    # fec_test_subset = toutes_fec_triees[:2]
 
-    corr_to_upload = [
-        img for img in fec_test_subset 
-        if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_fec_keys
-    ]
-    ###TEST
-    console.print(f"[bold green]{len(corr_data) - len(corr_to_upload)} [cyan]FEC existantes sur[/cyan] {len(corr_data)}[/bold green]")
+    # corr_to_upload = [
+    #     img for img in fec_test_subset 
+    #     if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_fec_keys
+    # ]
+    # ###TEST
+    # console.print(f"[bold green]{len(corr_data) - len(corr_to_upload)} [cyan]FEC existantes sur[/cyan] {len(corr_data)}[/bold green]")
 
     timelimit = datetime.datetime.now() + datetime.timedelta(minutes=30)
     
@@ -279,25 +279,6 @@ def import_images(document_miappe,document_data,wd_experience,TimeStamp,prov_dic
                 "experiments": [exp_uri]
             }
         }
-        # # ---------------- VERIFICATION DES DOUBLONS ----------------
-        # empreintes_vues = set()
-        # images_doublons = []
-
-        # for img in corr_to_upload:
-        #     # On recrée la clé d'unicité d'OpenSilex
-        #     empreinte = (img["Prov"], img["Plant ID"], img["Date"])
-            
-        #     if empreinte in empreintes_vues:
-        #         images_doublons.append(img)
-        #     else:
-        #         empreintes_vues.add(empreinte)
-
-        # print(f"Total des images prêtes à l'envoi : {len(corr_to_upload)}")
-        # print(f"Doublons stricts détectés (Même Prov + Target + Date) : {len(images_doublons)}")
-
-        # if len(images_doublons) > 0:
-        #     print("Exemple de fichier en doublon :", images_doublons[0]["Path"])
-        # # -----------------------------------------------------------
         
         dat_api.post_data_file(description=json.dumps(desc), file=img["Path"])
     #Création du dictionnaire de liaison FEC -> FEM
@@ -327,28 +308,29 @@ def import_images(document_miappe,document_data,wd_experience,TimeStamp,prov_dic
         if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_fem_keys
     ]
 
-    # TEST TEST TEST
-    toutes_fem_triees = sorted(mask_data.values(), key=lambda x: x["Path"])
+    # # TEST TEST TEST
+    # toutes_fem_triees = sorted(mask_data.values(), key=lambda x: x["Path"])
     
-    fem_test_subset = toutes_fem_triees[:2]
+    # fem_test_subset = toutes_fem_triees[:2]
 
-    mask_to_upload = [
-        img for img in fem_test_subset 
-        if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_fem_keys
-    ]
-    # TEST TEST TEST
+    # mask_to_upload = [
+    #     img for img in fem_test_subset 
+    #     if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_fem_keys
+    # ]
+    # # TEST TEST TEST
     console.print(f"[bold green]Found {len(mask_data) - len(mask_to_upload)} [cyan]FEC on[/cyan] {len(mask_data)} total[/bold green]")
 
     for img in track(mask_to_upload, description="[bold blue]Uploading FEM[/bold blue]"):
         if datetime.datetime.now() > timelimit:
             connexion(login, silex_API_Client)
             timelimit = datetime.datetime.now() + datetime.timedelta(minutes=30)
-
+            
+        round_order = int(img.get("Round Order"))
         if "Angle" in img: 
             settings = {"Camera Angle": img["Angle"]}
         else:
             settings = {"Camera Angle": None}
-        if 'round_order' in PlantMask:
+        if round_order in PlantMask:
             settings.update(PlantMask[round_order])
 
         desc = {
