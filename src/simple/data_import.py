@@ -292,7 +292,6 @@ def create_provenances(document_data,document_miappe,silex_API_Client):
     dat_api = silex.DataApi(silex_API_Client)
     df_data = pd.read_excel(document_data)
     pid = df_data['PID'].unique()[0]
-    console.print(f'[bold cyan]PID found:[/bold cyan] {pid}')
     prov_dict = {}
     # on décrit les 3 différentes provenances
     provenance_configs = {

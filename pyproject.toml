@@ -1,6 +1,6 @@
 [project]
 name = "SIMPLE"
-version = "0.10.0"
+version = "0.12.0"
 description = """SIMPLE, a Command Line Interface coded in python with a focus on ease of use, rapidity and flexibility.This tool will ( I hope ) help researchers uppload MIAPPE compliant phenotyping data on OpenSilex instances."""
 readme = "README.md"
 requires-python = ">=3.14"
