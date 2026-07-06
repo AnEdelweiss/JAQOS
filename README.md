@@ -20,13 +20,20 @@ As of now, the file structure for using the script properly is the following :
 
 ```
 exp_database/
+│
 ├── experiment_1/
-│   ├── tabular_data_file.xlsx
+│   ├── tabular_data_file_RGB1.xlsx
+│	├──	tabular_data_file_RGB2.xlsx
 │   ├── Miappe_template.xlsx
 │   ├── 00-RoundProtocol/
 │   │   └── Round_protocol_files.txt
 │   ├── output/
 │   │   └── miappe_template_filled.xlsx
+│   ├── RGB2/
+│   │   ├── FEC/
+│   │   │   └── FEC_images.png
+│   │   └── FEM/
+│   │       └── FEM_images.png
 │   └── RGB1/
 │       ├── FEC/
 │       │   └── FEC_images.png
@@ -34,12 +41,12 @@ exp_database/
 │           └── FEM_images.png
 ├── experiment_2/
 ├── experiment_3/
-└── experiment_4/
+└── experiment_.../
 ```
 
 ## The input miappe file
 
-as this is a work in progress, it currently only works with the current MIAPPE table provided in /exp_database/test_JAQOS/Miappe_Template.xlsx
+as this is a work in progress, it currently only works with the current MIAPPE table provided in /exp_database/test_SIMPLE/Miappe_Template.xlsx
 
 You can cange the order of the sheets, but you should NOT rename sheet names, this is what the script is using to read read data from.
 Likewise, do NOT  rename the 2nd row  of each sheet nor delete it.
@@ -73,7 +80,7 @@ Everything should work !
 - ~~Photo upploadng.~~
 - ~~Make a 'help' feature in the CLI~~
 - ~~Data upploading.~~
-- Reading the image names from the tabular data file and comparing them to those found locally. Thus limiting the parsing data from filename and using directly the tabular data.
+- ~~Reading the image names from the tabular data file and comparing them to those found locally. Thus limiting the parsing data from filename and using directly the tabular data.~~
 - Generalization : (changing the hardcoded provenances and PID, create the output document and the output folder in the experiment directory etc...)
 - Automatization(?)
 - Logging everything into a log-dd-mm-yyyy.log to keep a written trace of what has been done during the session.
