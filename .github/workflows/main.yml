@@ -4,7 +4,9 @@ on:
       version:
         description: "SIMPLE version 0.12"
         required: true
-
+        
+permissions:
+  contents: write
 jobs:
   build:
     strategy:
@@ -71,8 +73,7 @@ jobs:
           tag_name: ${{ github.event.inputs.version }}
           name: Release ${{ github.event.inputs.version }}
           draft: false
-          prerelease: false
+          prerelease: true
           files: |
-            app-linux
-            app-windows.exe
-            app-macos
+            SIMPLE-linux
+            SIMPLE.exe
