@@ -427,6 +427,7 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
     logfile={}
     for key, value in Morpho_Info.items():
         logfile[value] = []
+        Nom_colonne=key
         Var_Src = Var_Api.search_variables(name=value)["result"]
         #Recuperation des données deja existantes TEST
         all_existing_data = Dat_Api.search_data_list(
@@ -471,7 +472,7 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
                                                 target = ScObj_uri[row["Plant ID"]],
                                                 variable = Var_Src[0].uri,
                                                 value = row[key],
-                                                metadata = {"Round Order": row["Round Order"]},
+                                                metadata = {"Round Order": row["Round Order"],"Nom Colonne":Nom_colonne},
                                                 provenance = silex.DataProvenanceModel(
                                                     uri = prov_dict[prov],
                                                     prov_used = [Prov_Used] if Prov_Used else [],

@@ -249,7 +249,7 @@ def import_images(document_miappe,document_data,wd_experience,TimeStamp,prov_dic
     #     if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_fec_keys
     # ]
     # ###TEST
-    # console.print(f"[bold green]{len(corr_data) - len(corr_to_upload)} [cyan]FEC existantes sur[/cyan] {len(corr_data)}[/bold green]")
+    console.print(f"[bold green]{len(corr_data) - len(corr_to_upload)} [cyan]FEC existantes sur[/cyan] {len(corr_data)}[/bold green]")
 
     timelimit = datetime.datetime.now() + datetime.timedelta(minutes=30)
     
