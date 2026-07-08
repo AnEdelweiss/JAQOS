@@ -428,6 +428,19 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
     for key, value in Morpho_Info.items():
         logfile[value] = []
         Var_Src = Var_Api.search_variables(name=value)["result"]
+        #Recuperation des données deja existantes TEST
+        all_existing_data = Dat_Api.search_data_list(
+            variables=[Var_Src[0].uri],
+            experiments=[NameExp_uri[NameExp]], 
+            page_size=100000 
+        )['result']
+        existing_data_cache = set()
+        if all_existing_data:
+            for data in all_existing_data:
+                round_order = data.metadata.get('Round Order') if data.metadata else None
+                existing_data_cache.add((data.target, data._date, round_order))
+        #Recuperation des données deja existantes TEST
+
         ## Get or Create Numerical data ###############################################################
         pas=1000
         count=0
@@ -438,33 +451,34 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
             if 'Angle' not in df_Slice.columns:
                 df_Slice["Angle"]=None
             for row in track(df_Slice.to_dict('records'), description=f"importing {value} data"):
-                Dat_Src=Dat_Api.search_data_list(targets = [ScObj_uri[row["Plant ID"]]],
-                                                metadata = json.dumps({'Round Order': row['Round Order']}),
-                                                start_date=row['Measuring Time'].replace('+', '.000+'),
-                                                end_date = row['Measuring Time'].replace('+', '.000+'), 
-                                                variables = [Var_Src[0].uri],
-                                                experiments=[NameExp_uri[NameExp]], page_size=20)['result']
-                if Dat_Src:
+
+                target_uri = ScObj_uri[row["Plant ID"]]
+                formatted_date = str(row['Measuring Time']).replace('+', '.000+')
+                round_order_val = row['Round Order']
+                
+                # 3. VÉRIFICATION EN MÉMOIRE au lieu d'une requête HTTP
+                if (target_uri, formatted_date, round_order_val) in existing_data_cache:
                     logfile[value].append({'Angle': row["Angle"], 'Plant ID': {row["Plant ID"]}, 'Round Order': {row["Round Order"]}})
-                    
+
                 else:
                     Prov_Used=None
                     Setting_Dict={"Camera Angle": row["Angle"]}
                     for item in Mask_uri:
                         if item["Plant ID"]==row["Plant ID"] and item["Date"]==row['Measuring Time'].replace('+', '.000+'):
                             Prov_Used=silex.ProvEntityModel(uri=item["uri"], rdf_type="vocabulary:RGBImage")
-                    body = silex.DataCreationDTO(_date = str(row['Measuring Time']),
-                                            target = ScObj_uri[row["Plant ID"]],
-                                            variable = Var_Src[0].uri,
-                                            value = row[key] if pd.notna(row[key]) else None,
-                                            metadata = {"Round Order": row["Round Order"]},
-                                            provenance = silex.DataProvenanceModel(
-                                                uri = prov_dict[prov],
-                                                prov_used = [Prov_Used] if Prov_Used else [],
-                                                prov_was_associated_with = Prov_Was_Associated_With,
-                                                settings = Setting_Dict,
-                                                experiments = [NameExp_uri[NameExp]]))
-                    bodies.append(body)
+                    if pd.notna(row[key]):
+                        body = silex.DataCreationDTO(_date = str(row['Measuring Time']),
+                                                target = ScObj_uri[row["Plant ID"]],
+                                                variable = Var_Src[0].uri,
+                                                value = row[key],
+                                                metadata = {"Round Order": row["Round Order"]},
+                                                provenance = silex.DataProvenanceModel(
+                                                    uri = prov_dict[prov],
+                                                    prov_used = [Prov_Used] if Prov_Used else [],
+                                                    prov_was_associated_with = Prov_Was_Associated_With,
+                                                    settings = Setting_Dict,
+                                                    experiments = [NameExp_uri[NameExp]]))
+                        bodies.append(body)
                     if datetime.datetime.now() > timelimit:
                         connexion(login, silex_API_Client)
 
