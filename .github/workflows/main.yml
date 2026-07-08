@@ -23,7 +23,7 @@ jobs:
           python-version: "3.14"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: uv pip install -r pyproject.toml
 
       - name: Build executable
         run: pyinstaller --onefile app.py
