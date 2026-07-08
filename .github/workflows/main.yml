@@ -22,8 +22,11 @@ jobs:
         with:
           python-version: "3.14"
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
       - name: Install dependencies
-        run: uv pip install -r pyproject.toml
+        run: uv pip install .
 
       - name: Build executable
         run: pyinstaller --onefile app.py
