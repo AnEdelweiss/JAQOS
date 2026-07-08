@@ -34,11 +34,9 @@ jobs:
       - name: Rename executable
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            mv dist/SIMPLE.exe dist/app-windows.exe
+            mv dist/SIMPLE.exe dist/SIMPLE.exe
           elif [[ "$RUNNER_OS" == "Linux" ]]; then
-            mv dist/SIMPLE dist/app-linux
-          elif [[ "$RUNNER_OS" == "macOS" ]]; then
-            mv dist/SIMPLE dist/app-macos
+            mv dist/SIMPLE dist/SIMPLE-linux
           fi
         shell: bash
 
