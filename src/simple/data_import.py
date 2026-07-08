@@ -456,7 +456,7 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
                     body = silex.DataCreationDTO(_date = str(row['Measuring Time']),
                                             target = ScObj_uri[row["Plant ID"]],
                                             variable = Var_Src[0].uri,
-                                            value = row[key],
+                                            value = row[key] if pd.notna(row[key]) else None,
                                             metadata = {"Round Order": row["Round Order"]},
                                             provenance = silex.DataProvenanceModel(
                                                 uri = prov_dict[prov],
