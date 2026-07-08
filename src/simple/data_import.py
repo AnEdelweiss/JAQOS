@@ -460,8 +460,8 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
                                             metadata = {"Round Order": row["Round Order"]},
                                             provenance = silex.DataProvenanceModel(
                                                 uri = prov_dict[prov],
-                                                prov_used = [Prov_Used],
-                                                prov_was_associated_with = [Prov_Was_Associated_With],
+                                                prov_used = [Prov_Used] if Prov_Used else [],
+                                                prov_was_associated_with = Prov_Was_Associated_With,
                                                 settings = Setting_Dict,
                                                 experiments = [NameExp_uri[NameExp]]))
                     bodies.append(body)
