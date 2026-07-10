@@ -11,6 +11,7 @@ from simple.auth import connexion
 from simple.data_import import create_sci_obj,create_provenances
 import datetime
 from rich.prompt import Prompt
+import concurrent.futures
 
 def create_images(wd_experience,document_data,document_miappe,repertoire_photos,login,silex_API_Client):
 
@@ -253,11 +254,7 @@ def import_images(document_miappe,document_data,wd_experience,TimeStamp,prov_dic
 
     timelimit = datetime.datetime.now() + datetime.timedelta(minutes=30)
     
-    for img in track(corr_to_upload, description="[bold green]Uploading FEC[/bold green]"):
-        if datetime.datetime.now() > timelimit:
-            connexion(login, silex_API_Client)
-            timelimit = datetime.datetime.now() + datetime.timedelta(minutes=30)
-        #Set up des settings, pour faire en sorte de pouvoir envoyer des images même sans le dossier round_order
+    def process_fec(img):
         round_order = int(img.get("Round Order"))
         cam_pos_round = CamPos.get(round_order, {}) # Renvoie un dictionnaire vide si le round order n'existe pas
         settings_dict = {}
@@ -279,8 +276,16 @@ def import_images(document_miappe,document_data,wd_experience,TimeStamp,prov_dic
                 "experiments": [exp_uri]
             }
         }
-        
         dat_api.post_data_file(description=json.dumps(desc), file=img["Path"])
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        futures = [executor.submit(process_fec, img) for img in corr_to_upload]
+        for future in track(concurrent.futures.as_completed(futures), total=len(futures), description="[bold green]Uploading FEC[/bold green]"):
+            if datetime.datetime.now() > timelimit:
+                connexion(login, silex_API_Client)
+                timelimit = datetime.datetime.now() + datetime.timedelta(minutes=30)
+            future.result()
+
     #Création du dictionnaire de liaison FEC -> FEM
     fec_uri_map = {
         (elts.target, elts._date): elts.uri
@@ -291,7 +296,6 @@ def import_images(document_miappe,document_data,wd_experience,TimeStamp,prov_dic
 
     #Traitement des images FishEyeMasked (FEM)
     prov_fem = prov_dict[f'{facility}_{pid}_FishEyeMaskedImages']
-    #mask_data = [parse_image_filename(f, TimeStamp, prov_fem, pid) for f in ls_fem]
     dict_fem = {os.path.basename(path): path for path in ls_fem if os.path.basename(path) in data_ls_fem}
     fem_or_fec="fem"
     mask_data = parse_excel_for_metadata(df_data,dict_fem,prov_fem,fem_or_fec)
@@ -320,11 +324,7 @@ def import_images(document_miappe,document_data,wd_experience,TimeStamp,prov_dic
     # # TEST TEST TEST
     console.print(f"[bold green]Found {len(mask_data) - len(mask_to_upload)} [cyan]FEC on[/cyan] {len(mask_data)} total[/bold green]")
 
-    for img in track(mask_to_upload, description="[bold blue]Uploading FEM[/bold blue]"):
-        if datetime.datetime.now() > timelimit:
-            connexion(login, silex_API_Client)
-            timelimit = datetime.datetime.now() + datetime.timedelta(minutes=30)
-            
+    def process_fem(img):
         round_order = int(img.get("Round Order"))
         if "Angle" in img: 
             settings = {"Camera Angle": img["Angle"]}
@@ -345,7 +345,14 @@ def import_images(document_miappe,document_data,wd_experience,TimeStamp,prov_dic
                 "experiments": [exp_uri]
             }
         }
-        
         dat_api.post_data_file(description=json.dumps(desc), file=img["Path"])
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        futures = [executor.submit(process_fem, img) for img in mask_to_upload]
+        for future in track(concurrent.futures.as_completed(futures), total=len(futures), description="[bold blue]Uploading FEM[/bold blue]"):
+            if datetime.datetime.now() > timelimit:
+                connexion(login, silex_API_Client)
+                timelimit = datetime.datetime.now() + datetime.timedelta(minutes=30)
+            future.result()
 
     console.print('[bold green]Suceeded in importing images ![/bold green]')
