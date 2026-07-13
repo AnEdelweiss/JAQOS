@@ -43,10 +43,15 @@ exp_database/
 ├── experiment_3/
 └── experiment_.../
 ```
+## Download
+
+You can go to 'releases' section here : [Releases](https://github.com/AnEdelweiss/SIMPLE/releases)
+and download the latest one for your distribution (Linux/Windows), then just double click it ! and follow the instructions ;)
+
 
 ## The input miappe file
 
-as this is a work in progress, it currently only works with the current MIAPPE table provided in /exp_database/test_SIMPLE/Miappe_Template.xlsx
+as this is a work in progress, works with the current MIAPPE table provided in /exp_database/test_SIMPLE/Miappe_Template.xlsx
 
 You can cange the order of the sheets, but you should NOT rename sheet names, this is what the script is using to read read data from.
 Likewise, do NOT  rename the 2nd row  of each sheet nor delete it.
@@ -58,9 +63,9 @@ You should NOT rename this file NOR change the name of the sheets, this is what 
 
 ## The tabular data
 
-as this is a work in progress, it currently only works with the current tabular data provided in exp_database/test_SIMPLE/RGB1_Morpho_Manual.xlsx
+as this is a work in progress,works with the tabular data provided in exp_database/test_SIMPLE/RGB1_Morpho_Manual.xlsx
 
-## Instructions for running (as of now) :
+## Instructions for running the code via an IDE :
 
 This project requires Python 3.14.
 
@@ -75,12 +80,14 @@ Everything should work !
 
 ## Project roadmap :
 
+- Creating a 'troubleshooting/Q&A' section and a more thorough tutorial :) 
 - ~~Using the rich library.~~
 - ~~English translation.~~
 - ~~Photo upploadng.~~
 - ~~Make a 'help' feature in the CLI~~
 - ~~Data upploading.~~
 - ~~Reading the image names from the tabular data file and comparing them to those found locally. Thus limiting the parsing data from filename and using directly the tabular data.~~
-- Generalization : (changing the hardcoded provenances and PID, create the output document and the output folder in the experiment directory etc...)
+- Generalization : changing the hardcoded provenances and PID, create the output document and the output folder in the experiment directory etc...)
+- Generalization : no more 'fec' and 'fem' when importing images, 'do you want to import 1 or 2 sets of datafiles (one obtained from the first one)' ability to import more than just images (tar files, fluorescence data...)
 - Automatization(?)
 - Logging everything into a log-dd-mm-yyyy.log to keep a written trace of what has been done during the session.
