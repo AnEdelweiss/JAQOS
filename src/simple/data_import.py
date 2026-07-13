@@ -352,9 +352,7 @@ def create_provenances(document_data,document_miappe,silex_API_Client):
 def create_data(document_data,document_miappe,login,wd_experience,silex_API_Client):
     prov_dict=create_provenances(document_data,document_miappe,silex_API_Client)
     #ON TROUVE LES URI DES OBJETS SCIENTIFIQUES
-
     ScObj_uri=create_sci_obj(document_data,document_miappe,silex_API_Client)
-
     #JE RECUPERE LE NOM ET L'URI DE L'ÉXPERIENCE
     dataframe = pd.read_excel(document_miappe, sheet_name="experiment", header=1)
     dataframe.drop(dataframe.columns[dataframe.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
@@ -371,6 +369,10 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
     df_data = pd.read_excel(document_data)
     df_data['Measuring Date'] = df_data['Measuring Date'].dt.date
     df_data['Measuring Time'] = df_data['Measuring Time'].dt.tz_localize('UTC').dt.tz_convert('Europe/Helsinki').dt.strftime(desired_format)
+    if 'Angle' not in df_data.columns:
+        df_data['Angle']=None
+    if 'Round Order' not in df_data.columns:
+        df_data['Round Order']=None
     # 2. Lecture du excel
     dataframe = pd.read_excel(document_miappe, sheet_name="mapping_table_variables", header=0)
     Morpho_Info={}
@@ -398,7 +400,7 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
     prov=f'{facility}_{pid}_FishEyeMaskedImages'
 
     Dat_Api = silex.DataApi(silex_API_Client)
-    Dat_Src = Dat_Api.get_data_file_descriptions_by_search(provenances=[prov_dict[prov]], experiments=[NameExp_uri[NameExp]], page_size=100000)["result"]
+    Dat_Src = Dat_Api.get_data_file_descriptions_by_search(provenances=[prov_dict[prov]], experiments=[NameExp_uri[NameExp]], page_size=500000)["result"]
     Mask_uri=[]
     for elts in Dat_Src:
         for k, v in ScObj_uri.items():
@@ -409,7 +411,7 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
                         "Target": [value for key, value in ScObj_uri.items() if key == trayid][0],
                         "Plant ID": trayid,
                         "Date": elts._date,
-                        'Round Order': elts.metadata["Round Order"],
+                        'Round Order': elts.metadata["Round Order"] if "Round Order" in elts.metadata else None,
                         "Angle": elts.provenance.settings["Camera Angle"] if "Camera Angle" in elts.provenance.settings else None,
                         "uri": elts.uri})
     # print(Mask_uri[0])
@@ -445,34 +447,32 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
         ## Get or Create Numerical data ###############################################################
         pas=1000
         count=0
-        for slc in range(0, len(df_data), pas): # Using df:Filt here, replace to df_data to send all data!!!!!!!!
+        for slc in range(0, len(df_data), pas): 
             df_Slice = df_data.iloc[slc : slc + pas]
             bodies=[]
             count=count+1
-            if 'Angle' not in df_Slice.columns:
-                df_Slice["Angle"]=None
             for row in track(df_Slice.to_dict('records'), description=f"importing {value} data"):
 
                 target_uri = ScObj_uri[row["Plant ID"]]
                 formatted_date = str(row['Measuring Time']).replace('+', '.000+')
-                round_order_val = row['Round Order']
+                round_order_val =row.get('Round Order') if pd.notna(row.get('Round Order')) else None
                 
-                # 3. VÉRIFICATION EN MÉMOIRE au lieu d'une requête HTTP
+                # 3. VÉRIFICATION EN MÉMOIRE
                 if (target_uri, formatted_date, round_order_val) in existing_data_cache:
-                    logfile[value].append({'Angle': row["Angle"], 'Plant ID': {row["Plant ID"]}, 'Round Order': {row["Round Order"]}})
-
+                    logfile[value].append({'Angle': row.get("Angle"), 'Plant ID': {row["Plant ID"]}, 'Round Order': {row.get("Round Order")}})
                 else:
                     Prov_Used=None
                     Setting_Dict={"Camera Angle": row["Angle"]}
                     for item in Mask_uri:
-                        if item["Plant ID"]==row["Plant ID"] and item["Date"]==row['Measuring Time'].replace('+', '.000+'):
-                            Prov_Used=silex.ProvEntityModel(uri=item["uri"], rdf_type="vocabulary:RGBImage")
+                        if 'FEM_Filename' in df_data.columns or 'FEC_Filename' in df_data.columns:
+                            if item["Plant ID"]==row["Plant ID"] and item["Date"]==row['Measuring Time'].replace('+', '.000+'):
+                                Prov_Used=silex.ProvEntityModel(uri=item["uri"], rdf_type="vocabulary:RGBImage")
                     if pd.notna(row[key]):
                         body = silex.DataCreationDTO(_date = str(row['Measuring Time']),
                                                 target = ScObj_uri[row["Plant ID"]],
                                                 variable = Var_Src[0].uri,
                                                 value = row[key],
-                                                metadata = {"Round Order": row["Round Order"],"Nom Colonne":Nom_colonne},
+                                                metadata = {"Round Order": row.get("Round Order"), "Nom Colonne": Nom_colonne},
                                                 provenance = silex.DataProvenanceModel(
                                                     uri = prov_dict[prov],
                                                     prov_used = [Prov_Used] if Prov_Used else [],
