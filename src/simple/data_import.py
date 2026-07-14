@@ -102,7 +102,7 @@ def create_germplasm(document_miappe, silex_API_Client):
         
         germ_name = row["name"]
         germ_species = row.get("species")
-        rdf_type = row["rdf_type"]
+        rdf_type = str(row["rdf_type"])
 
         if germ_name not in Germplasms_uri:
             #On verifie l'existence de l'éspèce si on est sur une ligne Variété
@@ -110,7 +110,7 @@ def create_germplasm(document_miappe, silex_API_Client):
                 spec_src = Germ_Api.search_germplasm(name=f"^{germ_species}$", rdf_type="vocabulary:Species")["result"]
                 if not spec_src:
                     console.print(f"[bold red] Please check if the species you associated with [cyan]{germ_name}[/cyan] in the miappe template is correct \n Tip : You have to declare all the species before the varieties")
-                    break
+                    sys.exit()
                 Species_uri[germ_species] = spec_src[0].uri
             #On check si notre variété/espèce existe, et si elle existe pas on la crée
             Germ_Src = Germ_Api.search_germplasm(name=f"^{germ_name}$", rdf_type=rdf_type)["result"]
@@ -118,7 +118,7 @@ def create_germplasm(document_miappe, silex_API_Client):
                 if rdf_type != "vocabulary:Species":
                     row.pop('species', None)
                     row['species'] = Species_uri[germ_species]
-                row['metadata'] = f"Imported With SIMPLE {__version__}"
+                row['metadata'] = {"Imported with":f"SIMPLE {__version__}"}
                 body = silex.GermplasmCreationDTO(**row)
                 Germ_Api.create_germplasm(body=body, check_only=False)
                 Germ_Src = Germ_Api.search_germplasm(name=f"^{germ_name}$", rdf_type=rdf_type)["result"]
@@ -283,67 +283,69 @@ def create_sci_obj(document_data,document_miappe,silex_API_Client):
     return ScObj_uri
 
 def create_provenances(document_data,document_miappe,silex_API_Client):
-    #on cherche le MIAPPE pour avoir les facilities( et dans le futur le pid aussi surement)
-    dataframe = pd.read_excel(document_miappe, sheet_name="experiment", header=1)
-    dataframe.drop(dataframe.columns[dataframe.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
-    facility = str(dataframe['facilities'].iloc[0]).replace(",","_").replace(" ","_")
     dat_api = silex.DataApi(silex_API_Client)
-    df_data = pd.read_excel(document_data)
-    pid = df_data['PID'].unique()[0]
-
-    dataframe1 = pd.read_excel("/home/edelweiss/Documents/Network/h830/nappi_hy_data01/PHIS_Database/2024_FabaDr--/Miappe_Template_fabba.xlsx", sheet_name="data file", header=1)
+    dataframe1 = pd.read_excel(document_miappe, sheet_name="data file", header=1)
     dataframe1.drop(dataframe1.columns[dataframe1.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
     dataframe1.columns=dataframe1.columns.str.strip()
-
+    datafile_provenance={}
     for row in dataframe1.to_dict('records'):
-        datafile_provenance={row.get("dataFileLink"):
+        datafile_provenance.update({row.get("dataFileLink"):
         {
             "prov_morpho_parameters":row.get("Tabular Data Provenance"),
             "prov_datafiles1":row.get("Datafiles1 Provenance"),
             "prov_datafiles2":row.get("Datafiles2 Provenance")
-        }}
-
+        }})
     prov_dict = {}
     for suffix, config in datafile_provenance.items():
-        print(suffix)
-        print(config)
-        prov_name=config["WUE_FabaDr_Auto.xlsx"]
-        prov_src = dat_api.search_provenance(name=prov_name)["result"]
-        
-        if prov_src:
-            prov_dict[prov_name] = prov_src[0].uri
-            console.print(f"[cyan]Provenance found :[/cyan][bold green]{prov_name} [cyan]URI:[/cyan] {prov_src[0].uri}[/bold green]")
-        else:
-            # Création générique basée sur la configuration
-            body = silex.ProvenanceCreationDTO(
-                name=prov_name,
-                description="This provenance was created by default by SIMPLE",
-                prov_agent=[],
-                prov_activity=[]
-            )
+        datafile_name = os.path.basename(document_data)
+        if datafile_name == suffix:
+            for prov_name in datafile_provenance[suffix].values():
+                if pd.isna(prov_name) :
+                    continue
+                prov_src = dat_api.search_provenance(name=prov_name)["result"]
+                if prov_src:
+                    prov_dict[prov_name] = prov_src[0].uri
+                    console.print(f"[cyan]Provenance found :[/cyan][bold green]{prov_name} [cyan]URI:[/cyan] {prov_src[0].uri}[/bold green]")
+                else:
+                    # Création par default si la provenance n'a pas été crée manuellement
+                    stop=Prompt.ask(f"[bold red][+] The provenance [cyan]{prov_name}[/cyan] was not found. Provenances have to be created manually using the PHIS website. \n Do you want to create a default one using this name?\n (You will have to modify it afterward on your phis instance website)[/bold red]", choices=["y", "n"], default="n")
+                    if stop=="n":
+                        console.print("[bold red][+] Exiting to main menu, please edit your MIAPPE file.[/bold red]")
+                        exit()
+                    body = silex.ProvenanceCreationDTO(
+                        name=prov_name,
+                        description="This provenance was created by default using SIMPLE",
+                        prov_agent=[],
+                        prov_activity=[]
+                    )
 
-            api_resp = dat_api.create_provenance(body=body)
-            print(api_resp)
-            #console.print(f"Provenance Created: {api_resp['metadata']['datafiles']}")
-            
-            prov_src = dat_api.search_provenance(name=prov_name)["result"]
-            prov_dict[prov_name] = prov_src[0].uri
-            console.print(f"[cyan]Provenance created :[/cyan][bold green]{prov_name} [cyan] URI:[/cyan] {prov_src[0].uri}[/bold green]")
+                    api_resp = dat_api.create_provenance(body=body)
+                    #console.print(f"Provenance Created: {api_resp['metadata']['datafiles']}")
+                    
+                    prov_src = dat_api.search_provenance(name=prov_name)["result"]
+                    prov_dict[prov_name] = prov_src[0].uri
+                    console.print(f"[cyan]Provenance created :[/cyan][bold green]{prov_name} [cyan] URI:[/cyan] {prov_src[0].uri}[/bold green]")
 
     #console.print(prov_dict)
-    return prov_dict
+    return prov_dict,datafile_provenance
 
 def create_data(document_data,document_miappe,login,wd_experience,silex_API_Client):
-    prov_dict=create_provenances(document_data,document_miappe,silex_API_Client)
+    prov_dict,datafile_provenance=create_provenances(document_data,document_miappe,silex_API_Client)
     #ON TROUVE LES URI DES OBJETS SCIENTIFIQUES
     ScObj_uri=create_sci_obj(document_data,document_miappe,silex_API_Client)
     #JE RECUPERE LE NOM ET L'URI DE L'ÉXPERIENCE
     dataframe = pd.read_excel(document_miappe, sheet_name="experiment", header=1)
     dataframe.drop(dataframe.columns[dataframe.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
-    facility = str(dataframe['facilities'].iloc[0]).replace(",","_").replace(" ","_")
     NameExp = dataframe['name'].dropna().iloc[0]
     Exp_Src = silex.ExperimentsApi(silex_API_Client).search_experiments(name=NameExp)
     NameExp_uri = {NameExp: Exp_Src["result"][0].uri}
+    #Gestion provenances
+    for suffix, config in datafile_provenance.items():
+        datafile_name = os.path.basename(document_data)
+        if datafile_name == suffix:
+            provenance_morpho=config.get("prov_morpho_parameters")
+            provenance_image1=config.get("prov_datafiles1")
+            provenance_image2=config.get("prov_datafiles2")
     #JE RECUPERE LE PID
     df_data = pd.read_excel(document_data)
     pid = df_data['PID'].unique()[0]
@@ -381,7 +383,10 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
         sys.exit()
         
     # ON RECUPERE LES DONNÉES DES IMAGES QU'ON A UPLOAD PRECEDEMMENT
-    prov=f'{facility}_{pid}_FishEyeMaskedImages'
+    if pd.isna(provenance_image2):
+        prov=provenance_image1
+    else:
+        prov=provenance_image2
 
     Dat_Api = silex.DataApi(silex_API_Client)
     Dat_Src = Dat_Api.get_data_file_descriptions_by_search(provenances=[prov_dict[prov]], experiments=[NameExp_uri[NameExp]], page_size=500000)["result"]
@@ -400,8 +405,6 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
                         "uri": elts.uri})
     # print(Mask_uri[0])
     # print(len(Mask_uri))
-
-    prov=f'{facility}_{pid}_MorphoParameters'
     connexion(login, silex_API_Client)
 
     timelimit = datetime.datetime.now()+datetime.timedelta(minutes=30)
@@ -409,7 +412,6 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
     Dat_Api = silex.DataApi(silex_API_Client)
     Var_Api = silex.VariablesApi(silex_API_Client)
 
-    Prov_Was_Associated_With=silex.ProvEntityModel(uri="opensilex-sandbox:id/device/plantscreen_data_analyser",rdf_type="vocabulary:Software")
     logfile={}
     for key, value in Morpho_Info.items():
         logfile[value] = []
@@ -458,9 +460,8 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
                                                 value = row[key],
                                                 metadata = {"Round Order": row.get("Round Order"), "Nom Colonne": Nom_colonne,"Imported with":f"SIMPLE {__version__}"},
                                                 provenance = silex.DataProvenanceModel(
-                                                    uri = prov_dict[prov],
+                                                    uri = prov_dict[provenance_morpho],
                                                     prov_used = [Prov_Used] if Prov_Used else [],
-                                                    prov_was_associated_with = [Prov_Was_Associated_With],
                                                     settings = Setting_Dict,
                                                     experiments = [NameExp_uri[NameExp]]))
                         bodies.append(body)

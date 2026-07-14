@@ -9,15 +9,16 @@ from rich.table import Table
 from simple.ui import console
 from simple.auth import connexion
 from simple.data_import import create_sci_obj,create_provenances
+from simple.__init__ import __version__
 import datetime
 from rich.prompt import Prompt
 import concurrent.futures
 
 def create_images(wd_experience,document_data,document_miappe,repertoire_photos,login,silex_API_Client):
 
-    prov_dict=create_provenances(document_data,document_miappe,silex_API_Client)
+    prov_dict,datafile_provenance=create_provenances(document_data,document_miappe,silex_API_Client)
     ScObj_uri=create_sci_obj(document_data,document_miappe,silex_API_Client)
-    import_images(document_miappe,document_data,wd_experience,prov_dict,ScObj_uri,repertoire_photos,login,silex_API_Client)
+    import_images(document_miappe,document_data,wd_experience,prov_dict,datafile_provenance,ScObj_uri,repertoire_photos,login,silex_API_Client)
     return prov_dict
     
 def get_round_protocol_info(wd_experience,document_data):
@@ -121,23 +122,22 @@ def get_existing_images(dat_api, prov_uri, exp_uri):
         for elts in dat_src
     }
 
-def import_images(document_miappe,document_data,wd_experience,prov_dict,ScObj_uri,repertoire_photos,login,silex_API_Client):
+def import_images(document_miappe,document_data,wd_experience,prov_dict,datafile_provenance,ScObj_uri,repertoire_photos,login,silex_API_Client):
     #getting experiment uri
     connexion(login, silex_API_Client)
     dataframe = pd.read_excel(document_miappe, sheet_name="experiment", header=1)
     dataframe.drop(dataframe.columns[dataframe.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
     NameExp = dataframe['name'].dropna().iloc[0]
-    facility = str(dataframe['facilities'].iloc[0]).replace(",","_").replace(" ","_")
     Exp_Src = silex.ExperimentsApi(silex_API_Client).search_experiments(name=NameExp)["result"]
     exp_uri = Exp_Src[0].uri
     #GETTING PID
     df_data = pd.read_excel(document_data)
     pid = df_data['PID'].unique()[0]
-
+    console.print(f'[bold cyan]PID found:[/bold cyan] {pid}')
     if 'Angle' not in df_data.columns:
         df_data["Angle"]=None
         console.print("[red]no angle data found in tabular data")
-    console.print(f'[bold cyan]PID found:[/bold cyan] {pid}')
+    
     #Liste des images
     wd_img = repertoire_photos
     ls_files = []
@@ -201,22 +201,27 @@ def import_images(document_miappe,document_data,wd_experience,prov_dict,ScObj_ur
     # sorted_ls_fem=sorted(ls_fem)
     # ls_fec = sorted_ls_fec[-6:-1] # On trie les deux listes dans l'ordre AZ puis on prends que les 5/10 derniers (en l'occurence les 5 derniers)
     # ls_fem = sorted_ls_fem[-6:-1] # Et on utilise ça à la place de la giga-liste 
-    #print (ls_fec)
-    #print (ls_fem) 
+    # print (ls_fec)
+    # print (ls_fem) 
     #Pour TESTS
 
     CamPos,PlantMask=get_round_protocol_info(wd_experience,document_data)
     print("protocol info ok")
     dat_api = silex.DataApi(silex_API_Client)
     #Traitement des images FishEyeCorrected (FEC)do you want
-    prov_fec = prov_dict[f'{facility}_{pid}_FishEyeCorrectedImages']
-    print("prov_fec ok")
+    for suffix, config in datafile_provenance.items():
+        datafile_name = os.path.basename(document_data)
+        if datafile_name == suffix:
+            provenance_image1=prov_dict[config.get("prov_datafiles1")]
+            provenance_image2=prov_dict[config.get("prov_datafiles2")]
+
+    print("provenance_image1 ok")
     dict_fec = {os.path.basename(path): path for path in ls_fec if os.path.basename(path) in data_ls_fec}
     dict_fem = {os.path.basename(path): path for path in ls_fem if os.path.basename(path) in data_ls_fem}
     fem_or_fec="fec"
-    corr_data = parse_excel_for_metadata(df_data,dict_fec,prov_fec,fem_or_fec)
+    corr_data = parse_excel_for_metadata(df_data,dict_fec,provenance_image1,fem_or_fec)
     print("corrected data ok")
-    existing_fec_keys = get_existing_images(dat_api, prov_fec, exp_uri)
+    existing_fec_keys = get_existing_images(dat_api, provenance_image1, exp_uri)
     print("existing_corrected_data ok")
     corr_to_upload = [
         img for img in corr_data.values() 
@@ -224,15 +229,15 @@ def import_images(document_miappe,document_data,wd_experience,prov_dict,ScObj_ur
     ]
 
     # ####TEST :
-    # toutes_fec_triees = sorted(corr_data.values(), key=lambda x: x["Path"])
+    toutes_fec_triees = sorted(corr_data.values(), key=lambda x: x["Path"])
     
-    # # On isole les 5 premières pour le test
-    # fec_test_subset = toutes_fec_triees[:2]
+    # On isole les 5 premières pour le test
+    fec_test_subset = toutes_fec_triees[:2]
 
-    # corr_to_upload = [
-    #     img for img in fec_test_subset 
-    #     if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_fec_keys
-    # ]
+    corr_to_upload = [
+        img for img in fec_test_subset 
+        if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_fec_keys
+    ]
     # ###TEST
     console.print(f"[bold green]{len(corr_data) - len(corr_to_upload)} [cyan]FEC existantes sur[/cyan] {len(corr_data)}[/bold green]")
 
@@ -253,7 +258,7 @@ def import_images(document_miappe,document_data,wd_experience,prov_dict,ScObj_ur
             "rdf_type": "vocabulary:RGBImage",
             "date": img["Date"],
             "target": ScObj_uri[img["Plant ID"]],
-            "metadata": {"Round Order": round_order},
+            "metadata": {"Round Order": round_order,"Imported with":f"SIMPLE {__version__}"},
             "provenance": {
                 "uri": img["Prov"],
                 "settings": settings_dict,
@@ -274,22 +279,22 @@ def import_images(document_miappe,document_data,wd_experience,prov_dict,ScObj_ur
     fec_uri_map = {
         (elts.target, elts._date): elts.uri
         for elts in dat_api.get_data_file_descriptions_by_search(
-            provenances=[prov_fec], experiments=[exp_uri], page_size=100000
+            provenances=[provenance_image1], experiments=[exp_uri], page_size=100000
         )["result"]
     }
 
     #Traitement des images FishEyeMasked (FEM)
-    prov_fem = prov_dict[f'{facility}_{pid}_FishEyeMaskedImages']
+
     dict_fem = {os.path.basename(path): path for path in ls_fem if os.path.basename(path) in data_ls_fem}
     fem_or_fec="fem"
-    mask_data = parse_excel_for_metadata(df_data,dict_fem,prov_fem,fem_or_fec)
+    mask_data = parse_excel_for_metadata(df_data,dict_fem,provenance_image2,fem_or_fec)
     # Association de l'URI parente
     for img in mask_data.values():
         target = ScObj_uri[img["Plant ID"]]
         date = img["Date"].replace('+', '.000+')
         img["Prov_Used"] = fec_uri_map.get((target, date))
 
-    existing_fem_keys = get_existing_images(dat_api, prov_fem, exp_uri)
+    existing_fem_keys = get_existing_images(dat_api, provenance_image2, exp_uri)
 
     mask_to_upload = [
         img for img in mask_data.values()
@@ -297,14 +302,14 @@ def import_images(document_miappe,document_data,wd_experience,prov_dict,ScObj_ur
     ]
 
     # # TEST TEST TEST
-    # toutes_fem_triees = sorted(mask_data.values(), key=lambda x: x["Path"])
+    toutes_fem_triees = sorted(mask_data.values(), key=lambda x: x["Path"])
     
-    # fem_test_subset = toutes_fem_triees[:2]
+    fem_test_subset = toutes_fem_triees[:2]
 
-    # mask_to_upload = [
-    #     img for img in fem_test_subset 
-    #     if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_fem_keys
-    # ]
+    mask_to_upload = [
+        img for img in fem_test_subset 
+        if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_fem_keys
+    ]
     # # TEST TEST TEST
     console.print(f"[bold green]Found {len(mask_data) - len(mask_to_upload)} [cyan]FEC on[/cyan] {len(mask_data)} total[/bold green]")
 
@@ -321,7 +326,7 @@ def import_images(document_miappe,document_data,wd_experience,prov_dict,ScObj_ur
             "rdf_type": "vocabulary:RGBImage",
             "date": img["Date"],
             "target": ScObj_uri[img["Plant ID"]],
-            "metadata": {"Round Order": round_order},
+            "metadata": {"Round Order": round_order,"Imported with":f"SIMPLE {__version__}"},
             "provenance": {
                 "uri": img["Prov"],
                 "prov_used": [{"uri": img["Prov_Used"], "rdf_type": "vocabulary:RGBImage"}] if img.get("Prov_Used") else [],
