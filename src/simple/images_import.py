@@ -15,10 +15,9 @@ import concurrent.futures
 
 def create_images(wd_experience,document_data,document_miappe,repertoire_photos,login,silex_API_Client):
 
-    TimeStamp=link_image_time(document_data)
     prov_dict=create_provenances(document_data,document_miappe,silex_API_Client)
     ScObj_uri=create_sci_obj(document_data,document_miappe,silex_API_Client)
-    import_images(document_miappe,document_data,wd_experience,TimeStamp,prov_dict,ScObj_uri,repertoire_photos,login,silex_API_Client)
+    import_images(document_miappe,document_data,wd_experience,prov_dict,ScObj_uri,repertoire_photos,login,silex_API_Client)
     return prov_dict
     
 def get_round_protocol_info(wd_experience,document_data):
@@ -78,23 +77,6 @@ def get_round_protocol_info(wd_experience,document_data):
             sys.exit()
     return CamPos,PlantMask
 
-def link_image_time(document_data):
-    
-    df_data = pd.read_excel(document_data)
-    desired_format = "%Y-%m-%dT%H:%M:%S%z"
-    df_data['Measuring Date'] = df_data['Measuring Date'].dt.date
-    df_data['Measuring Time'] = df_data['Measuring Time'].dt.tz_localize('UTC').dt.tz_convert('Europe/Helsinki').dt.strftime(desired_format)
-    if 'Angle' in df_data.columns:
-        df_data['Img Name'] = df_data.apply(lambda row: f"{row['Experiment ID']}-{row['Round Order']}-{row['Plant ID']}-{row['PID']}-{row['Angle']:03}", axis=1)
-    else:
-        df_data['Img Name'] = df_data.apply(lambda row: f"{row['Experiment ID']}-{row['Round Order']}-{row['Plant ID']}-{row['PID']}", axis=1)
-    print(df_data['Img Name'])
-    # Get Round Info in Dict 
-    TimeStamp={}
-    for index, row in df_data.iterrows():
-        TimeStamp.update({row["Img Name"]: row['Measuring Time']})
-    return TimeStamp
-
 def parse_excel_for_metadata(df_data,dict,prov,fem_or_fec):
     metadata_dict={}
     for row in track(list(df_data.to_dict('records')),total=len(df_data), description="[green]processing metadatas[/green]"):
@@ -139,7 +121,7 @@ def get_existing_images(dat_api, prov_uri, exp_uri):
         for elts in dat_src
     }
 
-def import_images(document_miappe,document_data,wd_experience,TimeStamp,prov_dict,ScObj_uri,repertoire_photos,login,silex_API_Client):
+def import_images(document_miappe,document_data,wd_experience,prov_dict,ScObj_uri,repertoire_photos,login,silex_API_Client):
     #getting experiment uri
     connexion(login, silex_API_Client)
     dataframe = pd.read_excel(document_miappe, sheet_name="experiment", header=1)
@@ -161,21 +143,23 @@ def import_images(document_miappe,document_data,wd_experience,TimeStamp,prov_dic
     ls_files = []
     for (root, dirs, files) in os.walk(wd_img):
         for filename in files:
-            if filename.endswith(".png"):
+            if filename.endswith(".png") or filename.endswith(".tar") :
                 ls_files.append(os.path.join(root, filename))
     ls_fec = [x for x in ls_files if "FishEyeCorrected" in x]
     ls_fem = [x for x in ls_files if "FishEyeMasked" in x ]
     # On récupère également la liste de noms de fichiers présents dans notre tableur de données (uniques et sans les NA)
     if 'FEC_Filename' in df_data.columns:
         data_ls_fec=df_data['FEC_Filename'].dropna().unique().tolist()
+        set_ls_fec=set(data_ls_fec)
     if 'FEM_Filename' in df_data.columns:
         data_ls_fem=df_data['FEM_Filename'].dropna().unique().tolist()
+        set_ls_fem=set(data_ls_fem)
     #On extrait le nom des fichiers pour chaque dossier (fem/fec)
     nom_fichier_fec={os.path.basename(path) for path in ls_fec}
     nom_fichier_fem={os.path.basename(path) for path in ls_fem}
     # je transforme nos listes récupées dans le tableur de données en set pour les comparer à ceux d'au desuss
-    set_ls_fec=set(data_ls_fec)
-    set_ls_fem=set(data_ls_fem)
+    
+    
     #je fais une soustraction pour chaque cas, comme ça on sait si il manque image, ou lien dans le data sheet
     missing_fec_database=set_ls_fec-nom_fichier_fec
     missing_fem_database=set_ls_fem-nom_fichier_fem

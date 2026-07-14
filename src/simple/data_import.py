@@ -104,15 +104,15 @@ def create_germplasm(document_miappe, silex_API_Client):
         rdf_type = row["rdf_type"]
 
         if germ_name not in Germplasms_uri:
-
+            #On verifie l'existence de l'éspèce si on est sur une ligne Variété
             if germ_species not in Species_uri and rdf_type != "vocabulary:Species":
                 spec_src = Germ_Api.search_germplasm(name=f"^{germ_species}$", rdf_type="vocabulary:Species")["result"]
                 if not spec_src:
                     console.print(f"[bold red] Please check if the species you associated with [cyan]{germ_name}[/cyan] in the miappe template is correct \n Tip : You have to declare all the species before the varieties")
                     break
                 Species_uri[germ_species] = spec_src[0].uri
+            #On check si notre variété/espèce existe, et si elle existe pas on la crée
             Germ_Src = Germ_Api.search_germplasm(name=f"^{germ_name}$", rdf_type=rdf_type)["result"]
-
             if not Germ_Src:
                 if rdf_type != "vocabulary:Species":
                     row.pop('species', None)
@@ -296,7 +296,7 @@ def create_provenances(document_data,document_miappe,silex_API_Client):
             "activities": [silex.ActivityCreationDTO(rdf_type="vocabulary:ImageAcquisition")],
             "agents": [
                 silex.AgentModel(uri="uh:id/device/modular_plantscreen", rdf_type="vocabulary:Actuator"),
-                silex.AgentModel(uri="uh:id/device/modular_linescan_rgb2", rdf_type="vocabulary:SensingDevice", settings={})
+                silex.AgentModel(uri=f"uh:id/device/modular_linescan_{pid.lower()}", rdf_type="vocabulary:SensingDevice", settings={})
             ]
         },
         "FishEyeMaskedImages": {
@@ -304,7 +304,7 @@ def create_provenances(document_data,document_miappe,silex_API_Client):
             "activities": [silex.ActivityCreationDTO(rdf_type="vocabulary:ImageAnalysis")],
             "agents": [
                 silex.AgentModel(uri="uh:id/device/plantscreen_data_analyser", rdf_type="vocabulary:Software"),
-                silex.AgentModel(uri="uh:id/device/modular_linescan_rgb2", rdf_type="vocabulary:SensingDevice", settings={})
+                silex.AgentModel(uri=f"uh:id/device/modular_linescan_{pid.lower()}", rdf_type="vocabulary:SensingDevice", settings={})
             ]
         },
         "MorphoParameters": {
@@ -312,7 +312,7 @@ def create_provenances(document_data,document_miappe,silex_API_Client):
             "activities": [silex.ActivityCreationDTO(rdf_type="vocabulary:ImageAnalysis")],
             "agents": [
                 silex.AgentModel(uri="uh:id/device/modular_plantscreen", rdf_type="vocabulary:Actuator"),
-                silex.AgentModel(uri="uh:id/device/modular_linescan_rgb2", rdf_type="vocabulary:SensingDevice", settings={}),
+                silex.AgentModel(uri=f"uh:id/device/modular_linescan_{pid.lower()}", rdf_type="vocabulary:SensingDevice", settings={}),
                 silex.AgentModel(uri="uh:id/device/plantscreen_data_analyser", rdf_type="vocabulary:Software")
             ]
         }

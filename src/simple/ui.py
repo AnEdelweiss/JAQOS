@@ -38,11 +38,11 @@ BANNER = f"""[green]
 
 MENU_CREATION = """
   [red]\\[1][/red] I want to create an experiment. 
-  [green]\\[2][/green] I want to create one or more germplasms.
-  [cyan]\\[3][/cyan] I want to create factors with factor levels for this experiment.
+  [green]\\[2][/green] I want to create/check germplasms.
+  [cyan]\\[3][/cyan] I want to create/check factors for this experiment.
   [yellow]\\[4][/yellow] I want to create scientific objects for this experiment.
   [magenta]\\[5][/magenta] I want to import images. 
-  [green]\\[6][/green] Import tabular data.
+  [green]\\[6][/green] I want to import tabular data.
   [green]\\[7][/green] All of the above.
   [red]\\[9][/red] I want to return to the main menu...
 """
