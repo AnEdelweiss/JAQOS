@@ -294,18 +294,19 @@ def create_provenances(document_data,document_miappe,silex_API_Client):
     dataframe1 = pd.read_excel("/home/edelweiss/Documents/Network/h830/nappi_hy_data01/PHIS_Database/2024_FabaDr--/Miappe_Template_fabba.xlsx", sheet_name="data file", header=1)
     dataframe1.drop(dataframe1.columns[dataframe1.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
     dataframe1.columns=dataframe1.columns.str.strip()
+
     for row in dataframe1.to_dict('records'):
-        datafile_provenance={dataframe1["dataFileLink"]:
+        datafile_provenance={row.get("dataFileLink"):
         {
-            "prov_morpho_parameters":dataframe1["Tabular Data Provenance"],
-            "prov_datafiles1":dataframe1["Datafiles1 Provenance"],
-            "prov_datafiles2":dataframe1["Datafiles2 Provenance"]
+            "prov_morpho_parameters":row.get("Tabular Data Provenance"),
+            "prov_datafiles1":row.get("Datafiles1 Provenance"),
+            "prov_datafiles2":row.get("Datafiles2 Provenance")
         }}
 
     prov_dict = {}
-    for prov_name in dict_of_provenances.values():
-        # Recherche
-        print(prov_name)
+    for suffix, config in datafile_provenance.items():
+        print(suffix)
+        print(config)
         prov_src = dat_api.search_provenance(name=prov_name)["result"]
         
         if prov_src:
