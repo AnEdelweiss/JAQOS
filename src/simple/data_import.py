@@ -307,6 +307,7 @@ def create_provenances(document_data,document_miappe,silex_API_Client):
     for suffix, config in datafile_provenance.items():
         print(suffix)
         print(config)
+        prov_name=config["WUE_FabaDr_Auto.xlsx"]
         prov_src = dat_api.search_provenance(name=prov_name)["result"]
         
         if prov_src:
