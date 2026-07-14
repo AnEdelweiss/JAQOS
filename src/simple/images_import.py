@@ -143,7 +143,7 @@ def import_images(document_miappe,document_data,wd_experience,prov_dict,datafile
     ls_files = []
     for (root, dirs, files) in os.walk(wd_img):
         for filename in files:
-            if filename.endswith(".png") or filename.endswith(".tar") :
+            if filename.endswith(".png") :
                 ls_files.append(os.path.join(root, filename))
     ls_fec = [x for x in ls_files if "FishEyeCorrected" in x]
     ls_fem = [x for x in ls_files if "FishEyeMasked" in x ]
@@ -228,17 +228,17 @@ def import_images(document_miappe,document_data,wd_experience,prov_dict,datafile
         if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_fec_keys
     ]
 
-    # ####TEST :
-    toutes_fec_triees = sorted(corr_data.values(), key=lambda x: x["Path"])
+    # # ####TEST :
+    # toutes_fec_triees = sorted(corr_data.values(), key=lambda x: x["Path"])
     
-    # On isole les 5 premières pour le test
-    fec_test_subset = toutes_fec_triees[:2]
+    # # On isole les 5 premières pour le test
+    # fec_test_subset = toutes_fec_triees[:2]
 
-    corr_to_upload = [
-        img for img in fec_test_subset 
-        if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_fec_keys
-    ]
-    # ###TEST
+    # corr_to_upload = [
+    #     img for img in fec_test_subset 
+    #     if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_fec_keys
+    # ]
+    # # ###TEST
     console.print(f"[bold green]{len(corr_data) - len(corr_to_upload)} [cyan]FEC existantes sur[/cyan] {len(corr_data)}[/bold green]")
 
     timelimit = datetime.datetime.now() + datetime.timedelta(minutes=30)
@@ -301,16 +301,16 @@ def import_images(document_miappe,document_data,wd_experience,prov_dict,datafile
         if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_fem_keys
     ]
 
-    # # TEST TEST TEST
-    toutes_fem_triees = sorted(mask_data.values(), key=lambda x: x["Path"])
+    # # # TEST TEST TEST
+    # toutes_fem_triees = sorted(mask_data.values(), key=lambda x: x["Path"])
     
-    fem_test_subset = toutes_fem_triees[:2]
+    # fem_test_subset = toutes_fem_triees[:2]
 
-    mask_to_upload = [
-        img for img in fem_test_subset 
-        if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_fem_keys
-    ]
-    # # TEST TEST TEST
+    # mask_to_upload = [
+    #     img for img in fem_test_subset 
+    #     if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_fem_keys
+    # ]
+    # # # TEST TEST TEST
     console.print(f"[bold green]Found {len(mask_data) - len(mask_to_upload)} [cyan]FEC on[/cyan] {len(mask_data)} total[/bold green]")
 
     def process_fem(img):
