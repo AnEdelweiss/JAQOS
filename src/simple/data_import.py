@@ -86,6 +86,7 @@ def create_factor(document_miappe, silex_API_Client):
     return factors_levels_uri, factors_uri
 
 def create_germplasm(document_miappe, silex_API_Client):
+
     console.print(f"[cyan]Miappe file :[/cyan] {document_miappe}")
     dataframe = pd.read_excel(document_miappe, sheet_name="germplasm", header=1)
     dataframe.drop(dataframe.columns[dataframe.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
@@ -99,35 +100,30 @@ def create_germplasm(document_miappe, silex_API_Client):
     for row in track(list(dataframe.to_dict('records')), description="[green]Importing germplasms...[/green]"):
         
         germ_name = row["name"]
-        germ_species = row["species"]
-        germ_type_species = row["RDF_Type_Species"]
-        germ_type_germplasm = row["rdf_type"]
-        public = bool(row["is_public"])
-
-        if germ_name not in Species_uri:
-            Germ_Src = Germ_Api.search_germplasm(name=f"^{germ_species}$", rdf_type=germ_type_species)["result"]
-            if not Germ_Src:
-                body = silex.GermplasmCreationDTO(name=germ_species, rdf_type=germ_type_species, is_public=public)
-                Germ_Api.create_germplasm(body=body, check_only=False)
-                Germ_Src = Germ_Api.search_germplasm(name=f"^{germ_species}$", rdf_type=germ_type_species)["result"]
-            Species_uri[germ_species] = Germ_Src[0].uri
+        germ_species = row.get("species")
+        rdf_type = row["rdf_type"]
 
         if germ_name not in Germplasms_uri:
-            Germ_Src = Germ_Api.search_germplasm(name=f"^{germ_name}$", rdf_type=germ_type_germplasm)["result"]
+
+            if germ_species not in Species_uri and rdf_type != "vocabulary:Species":
+                spec_src = Germ_Api.search_germplasm(name=f"^{germ_species}$", rdf_type="vocabulary:Species")["result"]
+                if not spec_src:
+                    console.print(f"[bold red] Please check if the species you associated with [cyan]{germ_name}[/cyan] in the miappe template is correct \n Tip : You have to declare all the species before the varieties")
+                    break
+                Species_uri[germ_species] = spec_src[0].uri
+            Germ_Src = Germ_Api.search_germplasm(name=f"^{germ_name}$", rdf_type=rdf_type)["result"]
+
             if not Germ_Src:
-                row.pop('RDF_Type_Species', None)
-                row.pop('Species', None)
-                row['species'] = Species_uri[germ_species]
- #je convertis juste les clefs en string pour éviter les erreurs au déballage de la ligne d'après
+                if rdf_type != "vocabulary:Species":
+                    row.pop('species', None)
+                    row['species'] = Species_uri[germ_species]
                 body = silex.GermplasmCreationDTO(**row)
                 Germ_Api.create_germplasm(body=body, check_only=False)
-                Germ_Src = Germ_Api.search_germplasm(name=f"^{germ_name}$", rdf_type=germ_type_germplasm)["result"]
+                Germ_Src = Germ_Api.search_germplasm(name=f"^{germ_name}$", rdf_type=rdf_type)["result"]
             Germplasms_uri[germ_name] = Germ_Src[0].uri
-    
-    table_name="Varieties"
+
+    table_name="Created/Found Germplasms"
     show_data_table_dictionnaire(table_name,Germplasms_uri)
-    table_name="Species"
-    show_data_table_dictionnaire(table_name,Species_uri)
 
     return Germplasms_uri, Species_uri
 
