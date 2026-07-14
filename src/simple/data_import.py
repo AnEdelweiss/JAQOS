@@ -295,13 +295,12 @@ def create_provenances(document_data,document_miappe,silex_API_Client):
     dataframe1.drop(dataframe1.columns[dataframe1.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
     dataframe1.columns=dataframe1.columns.str.strip()
     for row in dataframe1.to_dict('records'):
-        
-        datafile_provenance=dataframe1["dataFileLink"]:
+        datafile_provenance={dataframe1["dataFileLink"]:
         {
             "prov_morpho_parameters":dataframe1["Tabular Data Provenance"],
             "prov_datafiles1":dataframe1["Datafiles1 Provenance"],
             "prov_datafiles2":dataframe1["Datafiles2 Provenance"]
-        }
+        }}
 
     prov_dict = {}
     for prov_name in dict_of_provenances.values():
