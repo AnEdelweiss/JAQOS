@@ -109,7 +109,7 @@ def create_germplasm(document_miappe, silex_API_Client):
             if germ_species not in Species_uri and rdf_type != "vocabulary:Species":
                 spec_src = Germ_Api.search_germplasm(name=f"^{germ_species}$", rdf_type="vocabulary:Species")["result"]
                 if not spec_src:
-                    console.print(f"[bold red] Please check if the species you associated with [cyan]{germ_name}[/cyan] in the miappe template is correct \n Tip : You have to declare all the species before the varieties")
+                    console.print(f"[bold red]\nPlease check if the species you associated with [cyan]{germ_name}[/cyan] in the miappe template is correct \n Tip : You have to declare all the species before the varieties")
                     sys.exit()
                 Species_uri[germ_species] = spec_src[0].uri
             #On check si notre variété/espèce existe, et si elle existe pas on la crée
@@ -136,9 +136,9 @@ def create_sci_obj(document_data,document_miappe,silex_API_Client):
     NameExp = dataframe['name'].dropna().iloc[0]
     StartExp = dataframe['start_date'].dropna().iloc[0]
     EndExp = dataframe['end_date'].dropna().iloc[0]
-    BioMat_Type=dataframe['scientifc_object_type'].dropna().iloc[0]
+    BioMat_Type=dataframe['scientific_object_type'].dropna().iloc[0]
     BioMat_Type=list(map(str.strip, BioMat_Type.split(",")))
-    #Ici on récupère les données tabulaires pour créer les objets scientifiques. on choisit de lire du début du doc jusqu'au PID (à adapter)
+    #Ici on récupère les données tabulaires pour créer les objets scientifiques.
     df_data = pd.read_excel(document_data)
     pid = df_data['PID'].unique()[0]
     console.print(f'[bold cyan]PID found:[/bold cyan] {pid}')
