@@ -215,7 +215,17 @@ def import_images(document_miappe, document_data, wd_experience, prov_dict, data
         img for img in corr_data.values() 
         if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_datafile1_keys
     ]
+    # # ####TEST :
+    # toutes_datafile1_triees = sorted(corr_data.values(), key=lambda x: x["Path"])
+    
+    # # On isole les 5 premières pour le test
+    # datafile1_test_subset = toutes_datafile1_triees[:2]
 
+    # corr_to_upload = [
+    #     img for img in datafile1_test_subset 
+    #     if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_datafile1_keys
+    # ]
+    # # ###TEST
     console.print(f"[bold green]{len(corr_data) - len(corr_to_upload)}[cyan] Datafiles1 exists on [bold green]{len(corr_data)}[/bold green] total [/cyan]")
 
     timelimit = datetime.datetime.now() + datetime.timedelta(minutes=30)
@@ -276,6 +286,17 @@ def import_images(document_miappe, document_data, wd_experience, prov_dict, data
             img for img in mask_data.values()
             if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_datafile2_keys
         ]
+
+        # # # TEST TEST TEST
+        # toutes_datafile2_triees = sorted(mask_data.values(), key=lambda x: x["Path"])
+        
+        # datafile2_test_subset = toutes_datafile2_triees[:2]
+
+        # mask_to_upload = [
+        #     img for img in datafile2_test_subset 
+        #     if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_datafile2_keys
+        # ]
+        # # # # TEST TEST TEST
 
         console.print(f"[bold green]{len(mask_data) - len(mask_to_upload)} [cyan]Datafiles2 exists on[/cyan] {len(mask_data)}[cyan] total[/bold green]")
 
