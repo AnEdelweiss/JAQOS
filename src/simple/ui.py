@@ -30,7 +30,7 @@ BANNER = f"""[green]
   [yellow]\\[+] You will be logged as a guest by default, you can log in to change user.[/yellow]
   [green]\\[+] Please read the README.md file available on the github for guidance.
   
-  [white]VERSION-SIMPLE[/white]    = [bold green]{__version__}[/bold green]
+  [white]VERSION-SIMPLE[/white]    = [bold green]{__version__} Now supports datafiles and modular provenances![/bold green]
   [white]VERSION-OpenSilex[/white] = [bold green]1.5.1-HOTFIX[/bold green]
   [white]VERSION-MIAPPE[/white]    = [bold green]1.2[/bold green]
   [white]Made By[/white]           = [bold green]•┈••✦ Edelweiss ✦••┈•[/bold green]
