@@ -291,7 +291,9 @@ def get_provenances(document_data,document_miappe,silex_API_Client):
         {
             "prov_morpho_parameters":row.get("Tabular Data Provenance"),
             "prov_datafiles1":row.get("Datafiles1 Provenance"),
-            "prov_datafiles2":row.get("Datafiles2 Provenance")
+            "rdf_type_datafile1":row.get("datafile1_rdf_type"),
+            "prov_datafiles2":row.get("Datafiles2 Provenance"),
+            "rdf_type_datafile2":row.get("datafile2_rdf_type"),
         }})
     prov_dict = {}
     for suffix, config in datafile_provenance.items():
@@ -299,6 +301,8 @@ def get_provenances(document_data,document_miappe,silex_API_Client):
         if datafile_name == suffix:
             for prov_name in datafile_provenance[suffix].values():
                 if pd.isna(prov_name) :
+                    continue
+                if prov_name=="RGBImage" or prov_name=="Archive":
                     continue
                 prov_src = data_api.search_provenance(name=prov_name)["result"]
                 if prov_src:
@@ -336,14 +340,14 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
     name_exp_uri = {name_exp: exp_search["result"][0].uri}
     #Gestion provenances
     provenance_morpho = None
-    provenance_image1 = None
-    provenance_image2 = None
+    provenance_datafile1 = None
+    provenance_datafile2 = None
     datafile_name = os.path.basename(document_data)
     for suffix, config in datafile_provenance.items():
         if datafile_name == suffix:
             provenance_morpho=config.get("prov_morpho_parameters") if not pd.isna(config.get("prov_morpho_parameters")) else None
-            provenance_image1=config.get("prov_datafiles1") if not pd.isna(config.get("prov_datafiles1")) else None
-            provenance_image2=config.get("prov_datafiles2") if not pd.isna(config.get("prov_datafiles2")) else None
+            provenance_datafile1=config.get("prov_datafiles1") if not pd.isna(config.get("prov_datafiles1")) else None
+            provenance_datafile2=config.get("prov_datafiles2") if not pd.isna(config.get("prov_datafiles2")) else None
             break
     #JE RECUPERE LE PID
     df_data = pd.read_excel(document_data)
@@ -379,7 +383,7 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
         sys.exit()
         
     # ON TENTE DE RECUPERE LES DONNÉES DES DATAFILES QU'ON A UPLOAD PRECEDEMMENT SI DATAFILE IL Y A
-    prov = provenance_image2 if provenance_image2 is not None else provenance_image1
+    prov = provenance_datafile2 if provenance_datafile2 is not None else provenance_datafile1
 
     mask_uri=[]
     data_api = silex.DataApi(silex_API_Client)

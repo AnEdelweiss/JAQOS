@@ -41,7 +41,7 @@ MENU_CREATION = """
   [green]\\[2][/green] I want to create/check germplasms.
   [cyan]\\[3][/cyan] I want to create/check factors for this experiment.
   [yellow]\\[4][/yellow] I want to create scientific objects for this experiment.
-  [magenta]\\[5][/magenta] I want to import images. 
+  [magenta]\\[5][/magenta] I want to import datafiles. 
   [green]\\[6][/green] I want to import tabular data.
   [green]\\[7][/green] All of the above.
   [red]\\[9][/red] I want to return to the main menu...

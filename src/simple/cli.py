@@ -6,7 +6,7 @@ from simple.ui import console, BANNER, MENU_CREATION, menu, choix_repertoire_tra
 from simple.auth import INSTANCES, get_login,connexion, is_connected,check_connection_internet
 from simple.experiment import find_Exp, create_experiment
 from simple.data_import import create_factor, create_germplasm, create_sci_obj,create_data
-from simple.images_import import create_images
+from simple.datafile_import import create_datafiles
 
 def main():
     check_connection_internet()
@@ -90,7 +90,7 @@ def main():
                             ScObj_uri = create_sci_obj(document_data,document_miappe,silex_API_Client)
 
                         elif choix_creation == 5:
-                            prov_dict=create_images(wd_experience,document_data,document_miappe,repertoire_photos,login,silex_API_Client)
+                            prov_dict=create_datafiles(wd_experience,document_data,document_miappe,repertoire_photos,login,silex_API_Client)
                             
                         elif choix_creation == 6:
                             create_data(document_data, document_miappe,login,wd_experience,silex_API_Client)
@@ -99,7 +99,7 @@ def main():
                             Germplasms_uri, _ = create_germplasm(document_miappe, silex_API_Client)
                             Factors_Levels_uri, _ = create_factor(document_miappe, silex_API_Client)
                             ScObj_uri = create_sci_obj(document_data,document_miappe,silex_API_Client)
-                            prov_dict=create_images(wd_experience,document_data,document_miappe,repertoire_photos,login,silex_API_Client)
+                            prov_dict=create_datafiles(wd_experience,document_data,document_miappe,repertoire_photos,login,silex_API_Client)
                             create_data(document_data, document_miappe,login,wd_experience,silex_API_Client)
                             break
                         elif choix_creation == 9:
