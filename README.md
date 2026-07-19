@@ -80,7 +80,7 @@ Everything should work !
 
 ## Project roadmap :
 
-- Creating a 'troubleshooting/Q&A' section and a more thorough tutorial :) 
+- Creating a 'troubleshooting/Q&A' section and a more thorough tutorial/doc :) 
 - Updating the blank miappe available in the github
 - Make a logo for the program :p
 - ~~Using the rich library.~~
