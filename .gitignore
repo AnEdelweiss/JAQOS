@@ -7,5 +7,6 @@ wheels/
 *.egg-info
 test/
 exp_database/
+src/simple/logs_SIMPLE
 # Virtual environments
 .venv

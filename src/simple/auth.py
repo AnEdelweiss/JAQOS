@@ -1,8 +1,10 @@
 import opensilexClientToolsPython as silex
 from simple.ui import console, Prompt,IntPrompt,Table
+from simple.erreurs import NetworkError,AuthenticationError
+from simple.systeme_logs import logger
 import json
 import requests
-import sys
+
 # Initiatialisation des différentes instances
 INSTANCES = {
     "https://opensilex.org/sandbox/rest": "Sandbox",
@@ -49,15 +51,18 @@ def deconnexion(silex_API_Client) -> bool:
 def check_connection_internet():
     with console.status("checking internet access..."):
         # initializing URL
+        logger.info("Checking internet access...")
         url = "https://www.wikipedia.org/"
-        timeout = 10
+        timeout = 5
         try:
             # requesting URL
             requests.get(url,timeout=timeout)
+            logger.info("User has internet !")
             return
         # catching exception
         except (requests.ConnectionError,requests.Timeout):
-            sys.exit("You are not connected to internet :( \n Please check your connection and try again.")
+            logger.error("No internet acess :/")
+            raise NetworkError("No internet acess :/")
 #Check rapide de la connexion
 def is_connected(silex_API_Client) -> bool:
     if silex_API_Client is not None and 'Authorization' in silex_API_Client.default_headers:
@@ -68,7 +73,6 @@ def connexion(login, silex_API_Client) -> bool:
     deconnexion(silex_API_Client)
     try:
         silex_API_Client.connect_to_opensilex_ws(**login)#Connexion avec le login reçu via la CLI
-
         return True
 
     except Exception as e:
@@ -77,11 +81,13 @@ def connexion(login, silex_API_Client) -> bool:
             if "HTTP response body:" in error_str:
                 json_part = error_str.split("HTTP response body:")[1].strip() #on garde seulement le json
                 error_data = json.loads(json_part)
-                Prompt.ask(f"[red]{error_data['result']['message']}[/red]") # j'affiche seulement le lessage d'erreur renvoyé ("utilisateur inconnu etc..")
+                logger.error(f"User authentification failed :{error_data['result']['message']}")
+                raise AuthenticationError(f"User authentification failed :{error_data['result']['message']}")
             else:
-                Prompt.ask(f"[red]error : {error_str}[/red]") # si je reçois qqc de bizarre
-            return False
+                logger.error(f"error : User authentification failed :{error_str}")
+                raise AuthenticationError(f"error : User authentification failed :{error_str}")
+
 
         except (json.JSONDecodeError, KeyError, IndexError):
-            Prompt.ask(f"error is impossible to decode : {error_str}")#si je reçois qqc de vraiment bizarre
-            return False
+            logger.error(f"error : User authentification failed :{error_str}")
+            raise AuthenticationError(f"error is impossible to decode :{error_str}")

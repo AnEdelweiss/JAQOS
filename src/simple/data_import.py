@@ -1,17 +1,15 @@
 from rich.prompt import Prompt
-import sys
 import os
-import json
 import pandas as pd
 import opensilexClientToolsPython as silex
 from rich.progress import track
-from rich.table import Table
 from simple.ui import console,show_data_table_dictionnaire
 from simple.auth import connexion
 from simple.__init__ import __version__
 import datetime
-from pprint import pprint
 import ast
+from simple.systeme_logs import logger
+from simple.erreurs import DataImportError, SimpleBaseException
 
 def get_name_space (silex_API_Client):
     ontology_api = silex.OntologyApi(silex_API_Client)
@@ -109,8 +107,8 @@ def create_germplasm(document_miappe, silex_API_Client):
             if germ_species not in species_uri and rdf_type != "vocabulary:Species":
                 spec_src = germplasm_api.search_germplasm(name=f"^{germ_species}$", rdf_type="vocabulary:Species")["result"]
                 if not spec_src:
-                    console.print(f"[bold red]\nPlease check if the species you associated with [cyan]{germ_name}[/cyan] in the miappe template is correct \n Tip : You have to declare all the species before the varieties")
-                    sys.exit()
+                    logger.error(f"The species {germ_species} associated with {germ_name} was not found... Please declare species before varieties and check for typos in the Miappe")
+                    raise DataImportError(f"[bold red]\nPlease check if the species you associated with [cyan]{germ_name}[/cyan] in the miappe template is correct \n Tip : You have to declare all the species before the varieties")
                 species_uri[germ_species] = spec_src[0].uri
             #On check si notre variété/espèce existe, et si elle existe pas on la crée
             germ_search = germplasm_api.search_germplasm(name=f"^{germ_name}$", rdf_type=rdf_type)["result"]
@@ -147,6 +145,9 @@ def create_sci_obj(document_data,document_miappe,silex_API_Client):
     relations_generales = []
     #on cherche si l'expérience éxiste pour en extraire l'uri
     exp_search = silex.ExperimentsApi(silex_API_Client).search_experiments(name=name_exp)
+    if "result" not in exp_search:
+        logger.error(f"Experiment {name_exp} was not found, check if the name is correct or create the experiment before scientific objects")
+        raise DataImportError(f"[bold red]This experiment doesn't exist, please check if the name is correct : {name_exp}[/bold red]")
     name_exp_uri = {name_exp: exp_search["result"][0].uri}
     #Récupérer un dictionnaire de facteurs levels pour cette experience
     api_response = silex.ExperimentsApi(silex_API_Client).get_available_factors(exp_search["result"][0].uri, )
@@ -161,9 +162,7 @@ def create_sci_obj(document_data,document_miappe,silex_API_Client):
         factors_levels_uri,_= create_factor(document_miappe, silex_API_Client)
 
     # création des relations
-    if exp_search is None:
-        console.print(f"[bold red]This experiment doesn't exist, please check if the same is correct : {name_exp}[/bold red]")
-        sys.exit()
+
     #on check les différents points qu'on veut garder pour les metadata des sciobj (start date,end date,material type)
     if start_exp:
         relation_temp = silex.RDFObjectRelationDTO(_property="vocabulary:hasCreationDate", value=start_exp)
@@ -176,7 +175,8 @@ def create_sci_obj(document_data,document_miappe,silex_API_Client):
     else:
         console.print('[bold yellow]End Date Missing[/bold yellow]')
     if not bio_mat_type:
-        sys.exit("Scientific Object RDF Type Missing")
+        logger.error("The column 'Scientific Object RDF Type' in the 'Experiment sheet' is empty")
+        raise DataImportError("Scientific Object RDF Type Missing")
     else:
         for biomat in bio_mat_type:
             ontology_api = silex.OntologyApi(silex_API_Client)
@@ -184,7 +184,9 @@ def create_sci_obj(document_data,document_miappe,silex_API_Client):
             if ontology_search:
                 rdf_type = ontology_search[0].children[0].uri
             else:
-                sys.exit("Scientific Object RDF Type Unknown")
+                logger.error(f"Scientific Object RDF Type Unknown: {biomat}")
+                raise DataImportError(f"Scientific Object RDF Type Unknown: {biomat}")
+
     #on initialise des variables, dont celle qui servira à écrire le excel
     sci_obj_api = silex.ScientificObjectsApi(silex_API_Client)
     sci_obj_uri = {}
@@ -196,14 +198,11 @@ def create_sci_obj(document_data,document_miappe,silex_API_Client):
     # JE LES METS DANS UN DICTIONNAIRE ET JE VERIFIE CHAQUE Plant ID AVEC LE NOM DANS LE DICTIONNAIRE
     all_existing_objs = sci_obj_api.search_scientific_objects(experiment=name_exp_uri[name_exp], page_size=10000)["result"]
     sci_obj_cache = {obj.name: obj.uri for obj in all_existing_objs}
-    # print(all_existing_objs)
-    # print(sci_obj_cache)
     #on envoie pour chaque ligne de la df scobj(sans les duplicatas)
     for row in track(list(df_sci_obj.to_dict('records')),total=len(df_sci_obj), description="[green]Processing Sci_Obj...[/green]"):
-        row["Plant ID"] = row["Plant ID"] + ""#test
-        tray_id=row["Plant ID"]
-        if tray_id in sci_obj_cache:
-            sci_obj_uri.update({tray_id: sci_obj_cache[tray_id]})
+        plant_id=row["Plant ID"]
+        if plant_id in sci_obj_cache:
+            sci_obj_uri.update({plant_id: sci_obj_cache[plant_id]})
         else:
             relations_sci_obj = []
             all_factors=[]
@@ -218,9 +217,8 @@ def create_sci_obj(document_data,document_miappe,silex_API_Client):
                         relations_sci_obj.append(relation_temp)
                         console.print(f"[bold green]  Germplasm [cyan]{row['Germplasm']}[/cyan] found[/bold green]")
                     else:
-                        console.print(f"[bold red] Germplasm [cyan]{row['Germplasm']}[/cyan] cannot be found, please check for typos or if they exist.[/bold red]")
-                        console.print("[bold red] Fermeture du client [/bold red]")
-                        sys.exit()
+                        logger.error(f"[bold red] Germplasm [cyan]{row['Germplasm']}[/cyan] cannot be found, please check for typos or if they exist.[/bold red]")
+                        raise DataImportError(f"[bold red] Germplasm [cyan]{row['Germplasm']}[/cyan] cannot be found, please check for typos or if they exist.[/bold red]")
                 else:
                     germplasm_value=dico_germplasm[row["Germplasm"]]
                     relation_temp = silex.RDFObjectRelationDTO(_property="vocabulary:hasGermplasm", value=germplasm_value)
@@ -235,9 +233,8 @@ def create_sci_obj(document_data,document_miappe,silex_API_Client):
                         factors_levels_uri, _ = create_factor(document_miappe, silex_API_Client)
                         
                         if factor_level not in factors_levels_uri:
-                            console.print(f"[bold red] This factor level : [cyan]{factor_level}[/cyan] cannot be found, please check for typos or if they really exist.[/bold red]")
-                            console.print("[bold red] Exiting client [/bold red]")
-                            sys.exit()
+                            logger.error(f"[bold red] This factor level : [cyan]{factor_level}[/cyan] cannot be found, please check for typos or if they really exist.[/bold red]")
+                            raise DataImportError(f"[bold red] This factor level : [cyan]{factor_level}[/cyan] cannot be found, please check for typos or if they really exist.[/bold red]")
                     else:
                         factor_level_value = factors_levels_uri.get(factor_level)
                         all_factors.append(factor_level_value)
@@ -247,7 +244,7 @@ def create_sci_obj(document_data,document_miappe,silex_API_Client):
             #on concatène les infos générales et les uri des germplasmes/facteurs puis on envoie le body et on le stock dans un dictionnaire
             relations = relations_generales + relations_sci_obj
             body = silex.ScientificObjectCreationDTO(name=row["Plant ID"], rdf_type=rdf_type, relations=relations, experiment=name_exp_uri[name_exp])
-            api_resp=sci_obj_api.create_scientific_object(body,)
+            api_resp=sci_obj_api.create_scientific_object(body)
             url_api=api_resp["result"][0]
             ##ATTENTION NE FONCTIONNE QUE SUR LA SANDBOX, DEMANDER A OPENSILEX POUR RENVOYER L'URI DANS L'API
             sci_obj_search=url_api.replace(base_uri,base_uri_namespace) 
@@ -312,8 +309,8 @@ def get_provenances(document_data,document_miappe,silex_API_Client):
                     # Création par default si la provenance n'a pas été crée manuellement
                     stop=Prompt.ask(f"[bold red][+] The provenance [cyan]{prov_name}[/cyan] was not found. Provenances have to be created manually using the PHIS website. \n Do you want to create a default one using this name?\n (You will have to modify it afterward on your phis instance website)[/bold red]", choices=["y", "n"], default="n")
                     if stop=="n":
-                        console.print("[bold red][+] Exiting to main menu, please edit your MIAPPE file.[/bold red]")
-                        sys.exit()
+                        logger.info(f"User refused to create default provenance : {prov_name}")
+                        raise SimpleBaseException("Action cancelled, please edit your Miappe file or create a provenance manually on your instance.")
                     body = silex.ProvenanceCreationDTO(
                         name=prov_name,
                         description="This provenance was created by default using SIMPLE. You may want to add agents, activities etc...",
@@ -347,8 +344,13 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
         if datafile_name == suffix:
             provenance_morpho=config.get("prov_morpho_parameters") if not pd.isna(config.get("prov_morpho_parameters")) else None
             provenance_datafile1=config.get("prov_datafiles1") if not pd.isna(config.get("prov_datafiles1")) else None
+            rdf1 = config.get("rdf_type_datafile1")
+            rdf_type_1 = rdf1 if not pd.isna(rdf1) else None
             provenance_datafile2=config.get("prov_datafiles2") if not pd.isna(config.get("prov_datafiles2")) else None
+            rdf2 = config.get("rdf_type_datafile2")
+            rdf_type_2 = rdf2 if not pd.isna(rdf2) else None
             break
+            
     #JE RECUPERE LE PID
     df_data = pd.read_excel(document_data)
     pid = df_data['PID'].unique()[0]
@@ -367,24 +369,17 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
     morpho_info={}
     for row in dataframe.to_dict('records'):
         morpho_info[row["column_in_data_table"]]=row["opensilex_variable_name"]
-    liste_tabular_data=df_data.columns.tolist()
-    liste_morpho_info=morpho_info.keys()
-    result = [item for item in liste_morpho_info if item not in liste_tabular_data] #je fais l'union des deux listes pour trouver quelles données importer
-    for i in result: #j'importe seulement les données qui sont présentes à la fois dans les colonnes des données tabulaires et dans ma mapping table
-        try:
-            morpho_info.pop(i)
-        except Exception:
-            continue
-    console.print(f"Importating corresponding data found : {morpho_info.keys()}")
+    morpho_info = {k: v for k, v in morpho_info.items() if k in df_data.columns}
 
-    stop = Prompt.ask("[bold green]Is this correct?[/bold green]", choices=["y", "n"], default="y")
+    console.print(f"Corresponding data found : {morpho_info.keys()}")
+    stop = Prompt.ask("[bold green]Would you like to import these data?[/bold green]", choices=["y", "n"], default="y")
     if stop =="n":
-        console.print("[bold red]OK, exiting client ![/bold red]")
-        sys.exit()
+        logger.info("User cancelled importation at data import phase")
+        raise SimpleBaseException("Data import cancelled by the user")
         
     # ON TENTE DE RECUPERE LES DONNÉES DES DATAFILES QU'ON A UPLOAD PRECEDEMMENT SI DATAFILE IL Y A
     prov = provenance_datafile2 if provenance_datafile2 is not None else provenance_datafile1
-
+    rdf_type = rdf_type_2 if rdf_type_2 is not None else rdf_type_1
     mask_uri=[]
     data_api = silex.DataApi(silex_API_Client)
     if prov is not None:
@@ -426,7 +421,7 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
                 round_order = data.metadata.get('Round Order') if data.metadata else None
                 existing_data_cache.add((data.target, data._date, round_order))
         #GET/CREATE NUMERICAL DATA
-        pas=5000
+        pas=2500
         for slc in track(range(0, len(df_data), pas), description=f"importing {value} data"): 
             df_Slice = df_data.iloc[slc : slc + pas]
             bodies=[]
@@ -442,10 +437,11 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
                 else:
                     provenance_used=None
                     setting_dict={"Camera Angle": row["Angle"]}
-                    for item in mask_uri:
-                        if 'FEM_Filename' in df_data.columns or 'FEC_Filename' in df_data.columns:
-                            if item["Plant ID"]==row["Plant ID"] and item["Date"]==row['Measuring Time'].replace('+', '.000+'):
-                                provenance_used=silex.ProvEntityModel(uri=item["uri"], rdf_type="vocabulary:RGBImage")
+                    if 'FEM_Filename' in df_data.columns or 'FEC_Filename' in df_data.columns:
+                        for item in mask_uri:
+                                if item["Plant ID"]==row["Plant ID"] and item["Date"]==row['Measuring Time'].replace('+', '.000+'):
+                                    provenance_used=silex.ProvEntityModel(uri=item["uri"], rdf_type=f"vocabulary:{rdf_type}")
+                                    break
                     if pd.notna(row[key]):
                         body = silex.DataCreationDTO(_date = str(row['Measuring Time']),
                                                 target = sci_obj_uri[row["Plant ID"]],
@@ -465,7 +461,7 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
                         timelimit = datetime.datetime.now()+datetime.timedelta(minutes=30)
             if bodies:
                 data_api.add_list_data(body=bodies,)
-                print(f'data from {value} was sucessfully uploaded.')
+                print(f'{len(bodies)} lines of data from {value} were sucessfully uploaded.')
             else:
-                print(f'all data of {value} already uploaded')
+                print(f'all data for {value} was already uploaded')
     print('Import Over')

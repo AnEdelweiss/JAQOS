@@ -7,9 +7,15 @@ from simple.auth import INSTANCES, get_login,connexion, is_connected,check_conne
 from simple.experiment import find_Exp, create_experiment
 from simple.data_import import create_factor, create_germplasm, create_sci_obj,create_data
 from simple.datafile_import import create_datafiles
+from simple.erreurs import NetworkError, SimpleBaseException,AuthenticationError
+from simple.systeme_logs import logger
 
 def main():
-    check_connection_internet()
+    try:
+        check_connection_internet()
+    except NetworkError as e:
+        console.print(f"[bold red]{e}[/bold red]")
+        return
     console.print(BANNER)
     console.print('[bold][green]______________________________________________________________________________________[/green][/bold]\n')
     Prompt.ask("Press a key to start")
@@ -28,7 +34,7 @@ def main():
         }
     silex_API_Client = silex.ApiClient(verbose=False)
     # CONNECTING AS GUEST ON THE SANDBOX BY DEFAULT ~
-    silex_API_Client.connect_to_opensilex_ws(**login)
+    connexion(login,silex_API_Client)
     etat = f"[cyan]Logged in as[/cyan] [bold green]{login["identifier"]}[/bold green] [cyan]on[/cyan] [bold green]{INSTANCES[login["host"]]}[/bold green]."
     #BOUCLE PRINCIPALE
     while True:
@@ -41,11 +47,12 @@ def main():
 
             elif user_input == 1:
                 login= get_login()
-                connecte = connexion(login, silex_API_Client)
-                if connecte:
+                try:
+                    connexion(login, silex_API_Client)
                     etat = f"[cyan]Your are logged in as[/cyan] [bold green]{login['identifier']}[/bold green] [cyan]on[/cyan] [bold green]{INSTANCES[login['host']]}[/bold green]."
-                else:
+                except AuthenticationError as e:
                     etat = "[bold red]You are not logged in, please try again...[/bold red]"
+                    console.print(e)
 
             elif user_input == 2:
                 if is_connected(silex_API_Client):
@@ -113,9 +120,16 @@ def main():
                 print("under development")
             else:
                 print("Invalid input")
-            
+
+        except SimpleBaseException as e:
+            logger.warning(f"Action interrupted : {e} ")
+            console.print(f"[bold yellow] \n Warning : {e} [/bold yellow]")
+
         except Exception as e:
-            print(f'There was an error : :\n{e}')
+            logger.exception("[bold red]Warning, an Unhandled Error was raised[/bold red]")
+            console.print("\nPlease try again or check the logs to know what happened...")
+
         except KeyboardInterrupt:
-            print("\n[!] User abort!")
-            sys.exit(1)
+            logger.info("Manual interruption")
+            console.print("[bold green] Goodbye ^^[/bold green]")
+            break

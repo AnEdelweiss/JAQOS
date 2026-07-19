@@ -1,7 +1,8 @@
-import sys
 import pandas as pd
 import opensilexClientToolsPython as silex
 from simple.ui import console, Prompt, show_data_panel
+from simple.systeme_logs import logger
+from simple.erreurs import DataImportError
 
 def find_Exp(silex_API_Client):
     
@@ -57,17 +58,18 @@ def create_experiment(document_miappe, choix_dossier, silex_API_Client):
             if ObjectiveExp:
                 console.print(f"[bold]Objective:[/bold] {ObjectiveExp[0:200]}...")
             else:
-                sys.exit("[bold red][+]Warning[+][/bold red][bold yellow]Objective Missing[/bold yellow]")
-            
+                logger.error("Objective Missing From MIAPPE file experiment sheet")
+                raise DataImportError ("Objective Missing From MIAPPE file experiment sheet")
             if StartExp:
                 console.print(f"[bold]Start Date:[/bold] {StartExp}")
             else:
-                sys.exit("[bold red][+]Warning[+][/bold red][bold yellow]Starting Date Missing[/bold yellow]")
+                logger.error("Starting Date Missing From MIAPPE file experiment sheet")
+                raise DataImportError ("Starting Date Missing From MIAPPE file experiment sheet")
 
             if EndExp:
                 console.print(f"[bold]End Date:[/bold] {EndExp}")
             else:
-                console.print("[bold red][+]Warning[+][/bold red][bold yellow]Ending Date Missing[/bold yellow]")
+                logger.warning("Ending Date Missing From MIAPPE file experiment sheet")
 
             console.print(f"[bold]Description:[/bold] {DescriptionExp[0:200]}...")
             console.print(f"[bold]Is_Public:[/bold] {Is_Public}")
@@ -84,7 +86,7 @@ def create_experiment(document_miappe, choix_dossier, silex_API_Client):
             Organisation_uri = {}
             for organisation in ls_Organisation:
                 if organisation is None:
-                    console.print("[bold red][+]Warning[+][/bold red][bold yellow]Organisation Missing[/bold yellow]")
+                    logger.warning("[bold red][+]Warning[+][/bold red][bold yellow]Organisation Missing From MIAPPE file experiment sheet[/bold yellow]")
                     ls_Organisation=None
                 else:
                     Org_Src = Org_Api.search_organizations(pattern=organisation)["result"]
@@ -93,13 +95,13 @@ def create_experiment(document_miappe, choix_dossier, silex_API_Client):
                         console.print(f"[green]{organisation}[/green] URI: {Org_Src[0].uri}")
                         ls_Organisation = list(Organisation_uri.values())
                     else:
-                        console.print(f"[bold red][+]Warning[+] {organisation}: Unknown Organisation[/bold red]")
+                        logger.warning(f"[bold red][+]Warning[+] {organisation}: Unknown Organisation [/bold red]")
                         ls_Organisation=None
 
             Groups_uri = {}
             for group in ls_Groups:
                 if group is None:
-                    console.print("[bold red][+]Warning[+][/bold red][bold yellow]Group Missing[/bold yellow]")
+                    logger.warning("[bold red][+]Warning[+][/bold red][bold yellow]Group Missing From MIAPPE file experiment sheet[/bold yellow]")
                     ls_Groups=None
                 else:
                     Sec_Src = Sec_Api.search_groups(name=group)["result"]
@@ -108,12 +110,12 @@ def create_experiment(document_miappe, choix_dossier, silex_API_Client):
                         console.print(f"[green]{group}[/green] URI: {Sec_Src[0].uri}")
                         ls_Groups = list(Groups_uri.values())
                     else:
-                        console.print(f"[bold red]{group}: Unknown Group[/bold red]")
+                        logger.warning(f"[bold red]{group}: Unknown Group[/bold red]")
                         ls_Groups=None
             Projects_uri = {}
             for project in ls_Projects:
                 if project is None:
-                    console.print("[bold yellow]Project Missing[/bold yellow]")
+                    logger.warning("[bold yellow]Project Missing From MIAPPE experiment sheet[/bold yellow]")
                     ls_Projects=None
                 else:
                     Proj_Src = Proj_Api.search_projects(name=project)["result"]
@@ -122,13 +124,13 @@ def create_experiment(document_miappe, choix_dossier, silex_API_Client):
                         console.print(f"[green]{project}[/green] URI: {Proj_Src[0].uri}")
                         ls_Projects = list(Projects_uri.values())
                     else:
-                        console.print(f"[bold red]{project}: Unknown Project[/bold red]")
+                        logger.warning(f"[bold red]{project}: Unknown Project[/bold red]")
                         ls_Projects=None
 
             Facilities_uri = {}
             for facility in ls_Facilities:
                 if facility is None:
-                    console.print("[bold yellow]Organisation Missing[/bold yellow]")
+                    logger.warning("[bold yellow]Organisation Missing from MIAPPE experiment sheet[/bold yellow]")
                     ls_Facilities=None
                 else:
                     Org_Src = Org_Api.search_facilities(pattern=facility)["result"]
@@ -137,12 +139,12 @@ def create_experiment(document_miappe, choix_dossier, silex_API_Client):
                         console.print(f"[green]{facility}[/green] URI: {Org_Src[0].uri}")
                         ls_Facilities = list(Facilities_uri.values())
                     else:
-                        console.print(f"[bold red][+]Warning[+] {facility}: Unknown Facility[/bold red]")
+                        logger.warning(f"[bold red][+]Warning[+] {facility}: Unknown Facility[/bold red]")
                         ls_Facilities=None
             Scientific_Supervisors_uri = {}
             for scisup in ls_Scientific_Supervisors:
                 if scisup is None:
-                    console.print("[bold red][+]Warning[+][/bold red][bold yellow]Scientific Supervisors Missing[/bold yellow]")
+                    logger.warning("[bold red][+]Warning[+][/bold red][bold yellow]Scientific Supervisors Missing from MIAPPE experiment sheet[/bold yellow]")
                     ls_Scientific_Supervisors=None
                 else:
                     Sec_Src = Sec_Api.search_persons(name=str(scisup))["result"]
@@ -151,12 +153,12 @@ def create_experiment(document_miappe, choix_dossier, silex_API_Client):
                         console.print(f"[green]{scisup}[/green] URI: {Sec_Src[0].uri}")
                         ls_Scientific_Supervisors = list(Scientific_Supervisors_uri.values())
                     else:
-                        console.print(f"[bold red][+]Warning[+]{scisup}: Unknown Scientific Supervisors[/bold red]")
+                        logger.warning(f"[bold red][+]Warning[+]{scisup}: Unknown Scientific Supervisors[/bold red]")
                         ls_Scientific_Supervisors=None
             Technical_Supervisors_uri = {}
             for techsup in ls_Technical_Supervisors:
                 if techsup is None:
-                    console.print("[bold red][+]Warning[+][/bold red] [bold yellow]Technical Supervisors Missing[/bold yellow]")
+                    logger.warning("[bold red][+]Warning[+][/bold red] [bold yellow]Technical Supervisors Missing from MIAPPE experiment sheet[/bold yellow]")
                     ls_Technical_Supervisors=None
                 else:
                     Sec_Src = Sec_Api.search_persons(name=techsup)["result"]
@@ -165,7 +167,7 @@ def create_experiment(document_miappe, choix_dossier, silex_API_Client):
                         console.print(f"[green]{techsup}[/green] URI: {Sec_Src[0].uri}")
                         ls_Technical_Supervisors = list(Technical_Supervisors_uri.values())
                     else:
-                        console.print(f"[bold red][+]Warning[+] {techsup}: Unknown Technical Supervisors[/bold red]")
+                        logger.warning(f"[bold red][+]Warning[+] {techsup}: Unknown Technical Supervisors[/bold red]")
                         ls_Technical_Supervisors=None
             body = silex.ExperimentCreationDTO(
                 name=NameExp,

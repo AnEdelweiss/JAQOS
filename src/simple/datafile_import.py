@@ -1,15 +1,16 @@
-import sys
 import os
 import json
+import time
 from lxml import etree as ET
 import pandas as pd
 import opensilexClientToolsPython as silex
 from rich.progress import track
-from rich.table import Table
 from simple.ui import console
 from simple.auth import connexion
 from simple.data_import import create_sci_obj, get_provenances
 from simple.__init__ import __version__
+from simple.systeme_logs import logger
+from simple.erreurs import SimpleBaseException, DataImportError
 import datetime
 from rich.prompt import Prompt
 import concurrent.futures
@@ -70,8 +71,8 @@ def get_round_protocol_info(wd_experience,document_data):
     else:
         stop = Prompt.ask("[bold red][×] PlantMask and Camera Position was not found, do you want to continue?\n(00-RoundProtocol missing) [/bold red]", choices=["y", "n"], default="y")
         if stop == "n":
-            console.print("[bold red]OK, exiting client ![/bold red]")
-            sys.exit()
+            logger.info("User cancelled the import : (00-RoundProtocol missing)")
+            raise SimpleBaseException("User cancelled import at Round protocol phase?")
     return CamPos,PlantMask
 
 def parse_excel_for_metadata(df_data, dict_paths, prov, file_type):
@@ -159,7 +160,8 @@ def import_datafiles(document_miappe, document_data, wd_experience, prov_dict, d
             if Prompt.ask("show the missing pictures?", choices=["y", "n"], default="y") == "y":
                 console.print(missing_datafile1)
     else:
-        console.print("[bold red][×] You are importing datafiles, you have to specify the name of the file for each row in a column named 'FEC_Filename'\n Leaving client.[/bold red]")
+        logger.error("User tried to import datafiles without 'datafile1_Filename column")
+        raise DataImportError("You are importing datafiles, you have to specify the name of the file for each row in a column named 'Datafile1_Filename'\n Leaving client.[/bold red]")
     #traitement des datafiles2
     has_datafile2 = 'FEM_Filename' in df_data.columns
     dict_datafile2 = {}
@@ -177,8 +179,8 @@ def import_datafiles(document_miappe, document_data, wd_experience, prov_dict, d
         console.print("[green][✓] The datafile database matches the data, we can continue[/green]")
     else:
         if Prompt.ask("[red]Continue despite decrepancies ? The import may fail..[/red]", choices=["y", "n"], default="n") == "n":
-            console.print("[bold red]OK, exiting client ![/bold red]")
-            sys.exit()
+            logger.info("User cancelled action after database discrepancies were found")
+            raise SimpleBaseException("User cancelled action after database discrepancies were found")
 
     if len(dict_datafile1)>=1:
         console.print(f'[bold cyan]There is :[/bold cyan] [bold green]{len(dict_datafile1)} [/bold green][bold cyan]items for datafile1.')   
@@ -187,8 +189,8 @@ def import_datafiles(document_miappe, document_data, wd_experience, prov_dict, d
 
     stop = Prompt.ask("[bold green]Do you want to continue to import datafiles?[/bold green]", choices=["y", "n"], default="y")
     if stop == "n":
-        console.print("[bold red]OK, exiting client ![/bold red]")
-        sys.exit()
+        logger.info("User aborted datafile import")
+        raise SimpleBaseException("User aborted datafile import")
 
     CamPos, PlantMask = get_round_protocol_info(wd_experience, document_data)
     console.print("[green][✓][/green] [cyan] Round Protocol infos OK ![/cyan] ")
@@ -202,9 +204,9 @@ def import_datafiles(document_miappe, document_data, wd_experience, prov_dict, d
     for suffix, config in datafile_provenance.items():
         if datafile_name == suffix:
             val1 = config.get("prov_datafiles1")
-            rdf1=config.get("rdf_type_datafile1")
+            rdf1 = config.get("rdf_type_datafile1")
             val2 = config.get("prov_datafiles2")
-            rdf2=config.get("rdf_type_datafile2")
+            rdf2 = config.get("rdf_type_datafile2")
             provenance_datafile1 = prov_dict.get(val1) if not pd.isna(val1) else None
             rdf_type_1 = rdf1 if not pd.isna(rdf1) else None
             provenance_datafile2 = prov_dict.get(val2) if not pd.isna(val2) else None
@@ -292,6 +294,8 @@ def import_datafiles(document_miappe, document_data, wd_experience, prov_dict, d
 
     # IMPORT DATAFILE 2 (OPTIONNEL)
     if has_datafile2 and provenance_datafile2:
+        with console.status("Waiting for Datafiles 1..."):
+            time.sleep(2)
         datafile1_uri_map = {
             (elts.target, elts._date): elts.uri
             for elts in dat_api.get_data_file_descriptions_by_search(
@@ -305,7 +309,11 @@ def import_datafiles(document_miappe, document_data, wd_experience, prov_dict, d
         for img in mask_data.values():
             target = ScObj_uri[img["Plant ID"]]
             date = img["Date"].replace('+', '.000+')
-            img["Prov_Used"] = datafile1_uri_map.get((target, date))
+            uri_trouve = datafile1_uri_map.get((target,date))
+            img["Prov_Used"] = uri_trouve
+    
+            if not uri_trouve:
+                console.print(f"[red]Attention: Prov_Used introuvable pour {target} - {img['Date']}[/red]")
 
         existing_datafile2_keys = get_existing_datafiles(dat_api, provenance_datafile2, exp_uri)
         console.print("[green][✓] Search for existing datafiles2 OK [/green]")
@@ -318,7 +326,7 @@ def import_datafiles(document_miappe, document_data, wd_experience, prov_dict, d
         # # # TEST TEST TEST
         # toutes_datafile2_triees = sorted(mask_data.values(), key=lambda x: x["Path"])
         
-        # datafile2_test_subset = toutes_datafile2_triees[:2]
+        # datafile2_test_subset = toutes_datafile2_triees[50:52]
 
         # mask_to_upload = [
         #     img for img in datafile2_test_subset 

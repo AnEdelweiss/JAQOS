@@ -1,5 +1,7 @@
+from simple.erreurs import SimpleBaseException
 import os
 from simple.__init__ import __version__
+from simple.systeme_logs import logger
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt, IntPrompt
@@ -97,10 +99,17 @@ def menu(etat):
     console.print(Panel(menu_text, title="[bold]Main Menu[/bold]", border_style="cyan", expand=False))
 
 def choix_repertoire_travail():
+    
     working_dir_path = Prompt.ask("[cyan]Please paste the complete ABSOLUTE file path to the parent directory of your experiments.[/cyan]\n[magenta](use ctrl+maj+V when pasting in the console)[/magenta]\n")
     working_dir = os.path.normpath(rf"{working_dir_path}")
-    
-    liste_dossiers = os.listdir(working_dir)
+    try:
+        liste_dossiers = os.listdir(working_dir)
+    except FileNotFoundError :
+        logger.warning(f"{working_dir_path} doesn't exist")
+        raise SimpleBaseException(f"{working_dir_path} was not found on your computer, please check for typos")
+    except PermissionError :
+        logger.warning(f"user doesn't have reading permissions on {working_dir_path}")
+        raise SimpleBaseException(f"You don't have the permission to read from {working_dir_path}")
     nombre = len(liste_dossiers)
     
     table = Table(title="Files found !", header_style="bold magenta")
