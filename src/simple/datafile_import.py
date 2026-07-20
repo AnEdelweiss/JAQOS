@@ -81,7 +81,7 @@ def parse_excel_for_metadata(df_data, dict_paths, prov, file_type):
         exp_id = row['Experiment ID']
         round_order = row['Round Order']
         tray_id = row['Plant ID']
-        pid = row['PID']
+        pid = row.get("PID",None)
         
         if file_type == "datafile1":
             filename = row.get("FEC_Filename")
@@ -136,8 +136,12 @@ def import_datafiles(document_miappe, document_data, wd_experience, prov_dict, d
     exp_uri = exp_search[0].uri
     #GETTING PID   
     df_data = pd.read_excel(document_data)
-    pid = df_data['PID'].unique()[0]
-    console.print(f'[bold cyan][✓] PID found:[/bold cyan] {pid}')
+    if 'PID' in df_data.columns:
+        pid = df_data['PID'].unique()[0]
+        console.print(f'[bold cyan][✓] PID found:[/bold cyan] {pid}')
+    else :
+        pid = None
+
     if 'Angle' not in df_data.columns:
         df_data["Angle"] = None
         console.print("[red][×] No angle data found in the tabular data. It is not a problem, if it is intentional.")

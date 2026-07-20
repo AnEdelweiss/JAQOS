@@ -17,6 +17,7 @@ def get_name_space (silex_API_Client):
     name_space_dict=ast.literal_eval(ontology_api.get_name_space()["result"])
     name_space=str([cle for cle, valeur in name_space_dict.items() if valeur == instance_uri])
     name_space_clean=name_space.replace("'","").replace("[","").replace("]","")+":"
+    logger.info(f"name space clean : {name_space_clean} & instance uri : {instance_uri}")
     return name_space_clean,instance_uri
 
 def create_factor(document_miappe, silex_API_Client):
@@ -121,7 +122,7 @@ def create_germplasm(document_miappe, silex_API_Client):
                 germplasm_api.create_germplasm(body=body, check_only=False)
                 germ_search = germplasm_api.search_germplasm(name=f"^{germ_name}$", rdf_type=rdf_type)["result"]
             germplasms_uri[germ_name] = germ_search[0].uri
-
+    logger.info(f"{germplasms_uri},\n{species_uri}")
     table_name="Created/Found Germplasms"
     show_data_table_dictionnaire(table_name,germplasms_uri)
 
@@ -138,8 +139,6 @@ def create_sci_obj(document_data,document_miappe,silex_API_Client):
     bio_mat_type=list(map(str.strip, bio_mat_type.split(",")))
     #Ici on récupère les données tabulaires pour créer les objets scientifiques.
     df_data = pd.read_excel(document_data)
-    pid = df_data['PID'].unique()[0]
-    console.print(f'[bold cyan]PID found:[/bold cyan] {pid}')
     #on garde seulement les Plant ID uniques
     df_sci_obj = df_data.drop_duplicates(subset=["Plant ID"])
     relations_generales = []
@@ -275,6 +274,8 @@ def create_sci_obj(document_data,document_miappe,silex_API_Client):
     console.print(f"[bold green]End of import : {len(sci_obj_uri)-created_sci_obj} found,{created_sci_obj} created. [/bold green]")
     # table_name="Objets sci"
     # show_data_table_dictionnaire(table_name,sci_obj_uri)
+    logger.info(len(sci_obj_uri))
+    logger.info(sci_obj_uri)
     return sci_obj_uri
 
 def get_provenances(document_data,document_miappe,silex_API_Client):
@@ -351,10 +352,6 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
             rdf_type_2 = rdf2 if not pd.isna(rdf2) else None
             break
             
-    #JE RECUPERE LE PID
-    df_data = pd.read_excel(document_data)
-    pid = df_data['PID'].unique()[0]
-    console.print(f'[bold cyan]PID found:[/bold cyan] {pid}')
     #FORMATAGE DONNÉES
     desired_format = "%Y-%m-%dT%H:%M:%S%z"
     df_data = pd.read_excel(document_data)

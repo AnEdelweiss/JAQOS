@@ -187,5 +187,6 @@ def create_experiment(document_miappe, choix_dossier, silex_API_Client):
 
             Exp_Src = Exp_Api.search_experiments(name=NameExp)
             NameExp_uri.update({NameExp: Exp_Src["result"][0].uri})
+            logger.info(f"[bold cyan]Your experiment {NameExp} has the following uri:[/bold cyan] {NameExp_uri[NameExp]}")
             console.print(f"[bold cyan]Your experiment {NameExp} has the following uri:[/bold cyan] {NameExp_uri[NameExp]}")
         return 1
