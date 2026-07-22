@@ -7,26 +7,18 @@ import opensilexClientToolsPython as silex
 from rich.progress import track
 from simple.ui import console
 from simple.auth import connexion
-from simple.data_import import create_sci_obj, get_provenances
 from simple.__init__ import __version__
 from simple.systeme_logs import logger
-from simple.erreurs import SimpleBaseException, DataImportError
+from simple.erreurs import DataImportError
 import datetime
-from rich.prompt import Prompt
 import concurrent.futures
-
-def create_datafiles(wd_experience,document_data,document_miappe,repertoire_photos,login,silex_API_Client):
-
-    prov_dict,datafile_provenance=get_provenances(document_data,document_miappe,silex_API_Client)
-    ScObj_uri=create_sci_obj(document_data,document_miappe,silex_API_Client)
-    import_datafiles(document_miappe,document_data,wd_experience,prov_dict,datafile_provenance,ScObj_uri,repertoire_photos,login,silex_API_Client)
-    return prov_dict
     
 def get_round_protocol_info(wd_experience,document_data):
     #Get RoundProtocol Infos 
-    PlantMask = {}
-    CamPos = {}
+    plant_mask = {}
+    cam_pos = {}
     Round_folder = os.path.join(wd_experience, '00-RoundProtocol')
+
     if os.path.isdir(Round_folder):
         Round_files = []
         for (root, dirs, files) in os.walk(Round_folder):
@@ -38,6 +30,7 @@ def get_round_protocol_info(wd_experience,document_data):
             filename = os.path.basename(wd_round).replace(".txt", "")
             Exp_Rd_ls = filename.split("-")
             Exp_Rd_Dict.update({wd_round: {"Experiment": Exp_Rd_ls[1], "Round": (Exp_Rd_ls[2][0:3]).replace("_","")}})
+       
         # Create Dictionary for all parameters 
         df_data = pd.read_excel(document_data)
         PID = df_data['PID'].unique()[0]
@@ -51,29 +44,27 @@ def get_round_protocol_info(wd_experience,document_data):
                 with open(key) as file:
                     xml_str = file.read().replace("\x00", "")
                 root = ET.fromstring(xml_str)
-        # Get PlantMask Info for all rounds 
-            PlantMask_rd = {}
+        # Get plant_mask Info for all rounds 
+            plant_mask_rd = {}
             for child in root.iter(PID):
                 for subchild in child.iter("PlantMask"):
-                    PlantMask_rd = {elem.tag: elem.text for elem in subchild}
+                    plant_mask_rd = {elem.tag: elem.text for elem in subchild}
                     round_index = int(value["Round"])
-                    PlantMask[round_index] = PlantMask_rd
+                    plant_mask[round_index] = plant_mask_rd
 
-            CamPos_rd = {}
+            cam_pos_rd = {}
             for child in root.iter(PID):
-                CamPos_rd.update(child.attrib)
+                cam_pos_rd.update(child.attrib)
             for child in root.iter(PID):
                 for subchild in child.iter("Offset"):
-                    CamPos_rd.update({subchild.tag: subchild.text})
+                    cam_pos_rd.update({subchild.tag: subchild.text})
                     round_index = int(value["Round"])
-                    CamPos[round_index] = CamPos_rd
-        console.print("[bold green][✓] PlantMask and Camera Position Info found ![/bold green]")
+                    cam_pos[round_index] = cam_pos_rd
+        logger.info("Plant_mask and Camera Position Info found !")
     else:
-        stop = Prompt.ask("[bold red][×] PlantMask and Camera Position was not found, do you want to continue?\nIt is generally not a problem, except if you wanted to use round protocol info. IT must be in a folder named '00-RoundProtocol'[/bold red]", choices=["y", "n"], default="y")
-        if stop == "n":
-            logger.info("User cancelled the import : (00-RoundProtocol missing)")
-            raise SimpleBaseException("User cancelled import at Round protocol phase?")
-    return CamPos,PlantMask
+        logger.warning("00-RoundProtocol folder missing (of if not in use)")
+        return cam_pos, plant_mask, False
+    return cam_pos, plant_mask, True
 
 def parse_excel_for_metadata(df_data, dict_paths, prov, file_type):
     metadata_dict = {}
@@ -127,31 +118,14 @@ def get_existing_datafiles(dat_api, prov_uri, exp_uri):
         for elts in dat_src
     }
 
-def import_datafiles(document_miappe, document_data, wd_experience, prov_dict, datafile_provenance, ScObj_uri, repertoire_photos, login, silex_API_Client):
-    connexion(login, silex_API_Client)
-    dataframe = pd.read_excel(document_miappe, sheet_name="experiment", header=1)
-    dataframe.drop(dataframe.columns[dataframe.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
-    name_exp = dataframe['name'].dropna().iloc[0]
-    exp_search = silex.ExperimentsApi(silex_API_Client).search_experiments(name=name_exp)["result"]
-    exp_uri = exp_search[0].uri
-    #GETTING PID   
-    df_data = pd.read_excel(document_data)
-    if 'PID' in df_data.columns:
-        pid = df_data['PID'].unique()[0]
-        console.print(f'[bold cyan][✓] PID found:[/bold cyan] {pid}')
-    else :
-        pid = None
-
-    if 'Angle' not in df_data.columns:
-        df_data["Angle"] = None
-        console.print("[red][×] No angle data found in the tabular data. It is not a problem, if it is intentional.")
-    
-    #Liste des datafiles
+def check_for_datafiles(document_data, repertoire_photos):
+        #Liste des datafiles
     ls_files_dict = {}
     for (root, dirs, files) in os.walk(repertoire_photos):
         for filename in files:
             ls_files_dict[filename] = os.path.join(root, filename)
 
+    df_data = pd.read_excel(document_data)
     #traitement des datafiles1
     dict_datafile1 = {}
     missing_datafile1 = set()
@@ -159,10 +133,6 @@ def import_datafiles(document_miappe, document_data, wd_experience, prov_dict, d
         set_ls_datafile1 = set(df_data['Datafile1_Filename'].dropna().unique())
         dict_datafile1 = {f: ls_files_dict[f] for f in set_ls_datafile1 if f in ls_files_dict}
         missing_datafile1 = set_ls_datafile1 - set(dict_datafile1.keys())
-        if missing_datafile1:
-            console.print(f"{len(missing_datafile1)} [red][×] datafiles are missing from the datafile1 picture database..[/red]")
-            if Prompt.ask("show the missing pictures?", choices=["y", "n"], default="y") == "y":
-                console.print(missing_datafile1)
     else:
         logger.error("User tried to import datafiles without 'datafile1_Filename column")
         raise DataImportError("You are importing datafiles, you have to specify the name of the file for each row in a column named 'Datafile1_Filename'\n Leaving client.[/bold red]")
@@ -174,32 +144,30 @@ def import_datafiles(document_miappe, document_data, wd_experience, prov_dict, d
         set_ls_datafile2 = set(df_data['Datafile2_Filename'].dropna().unique())
         dict_datafile2 = {f: ls_files_dict[f] for f in set_ls_datafile2 if f in ls_files_dict}
         missing_datafile2 = set_ls_datafile2 - set(dict_datafile2.keys())
-        if missing_datafile2:
-            console.print(f"{len(missing_datafile2)} [red][×] datafiles are missing from the datafile2 picture database..[/red]")
-            if Prompt.ask("show the missing pictures?", choices=["y", "n"], default="y") == "y":
-                console.print(missing_datafile2)
-
-    if len(missing_datafile1) + len(missing_datafile2) == 0:
-        console.print("[green][✓] The datafile database matches the data, we can continue[/green]")
-    else:
-        if Prompt.ask("[red]Continue despite decrepancies ? The import may fail..[/red]", choices=["y", "n"], default="n") == "n":
-            logger.info("User cancelled action after database discrepancies were found")
-            raise SimpleBaseException("User cancelled action after database discrepancies were found")
-
-    if len(dict_datafile1)>=1:
-        console.print(f'[bold cyan]There is :[/bold cyan] [bold green]{len(dict_datafile1)} [/bold green][bold cyan]items for datafile1.')   
-    if len(dict_datafile2)>=1:
-        console.print(f'[bold cyan]There is :[/bold cyan] [bold green]{len(dict_datafile2)} [/bold green][bold cyan]items for datafile2.')   
-
-    stop = Prompt.ask("[bold green]Do you want to continue to import datafiles?[/bold green]", choices=["y", "n"], default="y")
-    if stop == "n":
-        logger.info("User aborted datafile import")
-        raise SimpleBaseException("User aborted datafile import")
-
-    CamPos, PlantMask = get_round_protocol_info(wd_experience, document_data)
-    console.print("[green][✓][/green] [cyan] Round Protocol infos OK ![/cyan] ")
-    dat_api = silex.DataApi(silex_API_Client)
     
+    return dict_datafile1, missing_datafile1, dict_datafile2, missing_datafile2, has_datafile2, df_data
+
+def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafile1, dict_datafile2, has_datafile2, prov_dict, datafile_provenance, sci_obj_uri, cam_pos, plant_mask, login, silex_API_Client,status_callback=None, progress_callback=None):
+    
+    connexion(login, silex_API_Client)
+    dataframe = pd.read_excel(document_miappe, sheet_name="experiment", header=1)
+    dataframe.drop(dataframe.columns[dataframe.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
+    name_exp = dataframe['name'].dropna().iloc[0]
+    exp_search = silex.ExperimentsApi(silex_API_Client).search_experiments(name=name_exp)["result"]
+    exp_uri = exp_search[0].uri
+    #GETTING PID and angle
+    if 'PID' in df_data.columns:
+        pid = df_data['PID'].unique()[0]
+        status_callback(f'[bold cyan][✓] PID found:[/bold cyan] {pid}')
+        logger.info(f'[bold cyan][✓] PID found:[/bold cyan] {pid}')
+    else :
+        pid = None
+    if 'Angle' not in df_data.columns:
+        df_data["Angle"] = None
+        status_callback("No angle data was found in the tabular data. It is not a problem, if it is intentional.")
+        logger.info("No angle data was found in the tabular data. It is not a problem, if it is intentional.")
+
+    dat_api = silex.DataApi(silex_API_Client)
     datafile_name = os.path.basename(document_data)
     provenance_datafile1 = None
     provenance_datafile2 = None
@@ -216,40 +184,46 @@ def import_datafiles(document_miappe, document_data, wd_experience, prov_dict, d
             provenance_datafile2 = prov_dict.get(val2) if not pd.isna(val2) else None
             rdf_type_2 = rdf2 if not pd.isna(rdf2) else None
             break
-    
-    console.print(f"[green][✓] Provenance for datafile1 found : {provenance_datafile1}[/green]")
+    status_callback(f"[green][✓] Provenance for datafile1 found : {provenance_datafile1}[/green]")
+    logger.info(f"[green][✓] Provenance for datafile1 found : {provenance_datafile1}[/green]")
     if provenance_datafile2 is not None:
-        console.print(f"[green][✓] Provenance for datafile2 found : {provenance_datafile2}[/green]")
+        status_callback(f"[green][✓] Provenance for datafile2 found : {provenance_datafile2}[/green]")
+        logger.info(f"[green][✓] Provenance for datafile2 found : {provenance_datafile2}[/green]")
 
     # IMPORT DATAFILE 1
     corr_data = parse_excel_for_metadata(df_data, dict_datafile1, provenance_datafile1, "datafile1")
-    console.print("[green][✓] datafile1 data parsing OK [/green]")
+    status_callback("[green][✓] datafile1 data parsing OK [/green]")
+    logger.info("[green][✓] datafile1 data parsing OK [/green]")
     existing_datafile1_keys = get_existing_datafiles(dat_api, provenance_datafile1, exp_uri)
-    console.print("[green][✓] Search for existing datafiles1 OK [/green]")
+    status_callback("[green][✓] Search for existing datafiles1 OK [/green]")
+    logger.info("[green][✓] Search for existing datafiles1 OK [/green]")
     
     corr_to_upload = [
         img for img in corr_data.values() 
-        if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_datafile1_keys
+        if (sci_obj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_datafile1_keys
     ]
-    # # ####TEST :
-    # toutes_datafile1_triees = sorted(corr_data.values(), key=lambda x: x["Path"])
-    
-    # # On isole les 5 premières pour le test
-    # datafile1_test_subset = toutes_datafile1_triees[50:52]
 
-    # corr_to_upload = [
-    #     img for img in datafile1_test_subset 
-    #     if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_datafile1_keys
-    # ]
-    # # ###TEST
-    console.print(f"[bold green]{len(corr_data) - len(corr_to_upload)}[cyan] Datafiles1 exists on [bold green]{len(corr_data)}[/bold green] total [/cyan]")
+    # ####TEST :
+    toutes_datafile1_triees = sorted(corr_data.values(), key=lambda x: x["Path"])
+    
+    # On isole les 5 premières pour le test
+    datafile1_test_subset = toutes_datafile1_triees[50:52]
+
+    corr_to_upload = [
+        img for img in datafile1_test_subset 
+        if (sci_obj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_datafile1_keys
+    ]
+    # ###TEST
+
+    status_callback(f"[bold green]{len(corr_data) - len(corr_to_upload)}[cyan] Datafiles1 exists on [bold green]{len(corr_data)}[/bold green] total [/cyan]")
+    logger.info(f"[bold green]{len(corr_data) - len(corr_to_upload)}[cyan] Datafiles1 exists on [bold green]{len(corr_data)}[/bold green] total [/cyan]")
 
     timelimit = datetime.datetime.now() + datetime.timedelta(minutes=30)
     
     def process_datafile1(img):
         path_ou_post = 0
         round_order = int(img.get("Round Order"))
-        cam_pos_round = CamPos.get(round_order, {}) 
+        cam_pos_round = cam_pos.get(round_order, {}) 
         settings_dict = {}
         if img.get("Angle") is not None:
             settings_dict["Camera Angle"] = img.get("Angle")
@@ -261,7 +235,7 @@ def import_datafiles(document_miappe, document_data, wd_experience, prov_dict, d
         desc = {
             "rdf_type": f"vocabulary:{rdf_type_1}",
             "date": img["Date"],
-            "target": ScObj_uri[img["Plant ID"]],
+            "target": sci_obj_uri[img["Plant ID"]],
             "metadata": {"Round Order": round_order, "Imported with": f"SIMPLE {__version__}"},
             "provenance": {
                 "uri": img["Prov"],
@@ -274,7 +248,7 @@ def import_datafiles(document_miappe, document_data, wd_experience, prov_dict, d
                 silex.DataFilePathCreationDTO(
                     rdf_type= f"vocabulary:{rdf_type_1}",
                     _date= img["Date"],
-                    target=ScObj_uri[img["Plant ID"]],
+                    target=sci_obj_uri[img["Plant ID"]],
                     metadata={
                         "Round Order": round_order,
                         "Imported with": f"SIMPLE {__version__}"
@@ -290,7 +264,7 @@ def import_datafiles(document_miappe, document_data, wd_experience, prov_dict, d
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         futures = [executor.submit(process_datafile1, img) for img in corr_to_upload]
-        for future in track(concurrent.futures.as_completed(futures), total=len(futures), description="[bold green]Uploading Datafile1[/bold green]"):
+        for future in concurrent.futures.as_completed(futures):
             if datetime.datetime.now() > timelimit:
                 connexion(login, silex_API_Client)
                 timelimit = datetime.datetime.now() + datetime.timedelta(minutes=30)
@@ -308,48 +282,47 @@ def import_datafiles(document_miappe, document_data, wd_experience, prov_dict, d
         }
 
         mask_data = parse_excel_for_metadata(df_data, dict_datafile2, provenance_datafile2, "datafile2")
-        console.print("[green][✓] datafile2 data parsing OK [/green]")
+        status_callback("[green][✓] datafile2 data parsing OK [/green]")
+        logger.info("[green][✓] datafile2 data parsing OK [/green]")
 
         for img in mask_data.values():
-            target = ScObj_uri[img["Plant ID"]]
+            target = sci_obj_uri[img["Plant ID"]]
             date = img["Date"].replace('+', '.000+')
             uri_trouve = datafile1_uri_map.get((target,date))
             img["Prov_Used"] = uri_trouve
-    
-            if not uri_trouve:
-                console.print(f"[red]Attention: Prov_Used introuvable pour {target} - {img['Date']}[/red]")
 
         existing_datafile2_keys = get_existing_datafiles(dat_api, provenance_datafile2, exp_uri)
-        console.print("[green][✓] Search for existing datafiles2 OK [/green]")
+        status_callback("[green][✓] Search for existing datafiles2 OK [/green]")
+        logger.info("[green][✓] Search for existing datafiles2 OK [/green]")
 
         mask_to_upload = [
             img for img in mask_data.values()
-            if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_datafile2_keys
+            if (sci_obj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_datafile2_keys
         ]
 
-        # # # TEST TEST TEST
-        # toutes_datafile2_triees = sorted(mask_data.values(), key=lambda x: x["Path"])
+        # # TEST TEST TEST
+        toutes_datafile2_triees = sorted(mask_data.values(), key=lambda x: x["Path"])
         
-        # datafile2_test_subset = toutes_datafile2_triees[50:52]
+        datafile2_test_subset = toutes_datafile2_triees[50:52]
 
-        # mask_to_upload = [
-        #     img for img in datafile2_test_subset 
-        #     if (ScObj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_datafile2_keys
-        # ]
-        # # # # TEST TEST TEST
+        mask_to_upload = [
+            img for img in datafile2_test_subset 
+            if (sci_obj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_datafile2_keys
+        ]
+        # # # TEST TEST TEST
 
-        console.print(f"[bold green]{len(mask_data) - len(mask_to_upload)} [cyan]Datafiles2 exists on[/cyan] {len(mask_data)}[cyan] total[/bold green]")
-
+        status_callback(f"[bold green]{len(mask_data) - len(mask_to_upload)} [cyan]Datafiles2 exists on[/cyan] {len(mask_data)}[cyan] total[/bold green]")
+        logger.info(f"[bold green]{len(mask_data) - len(mask_to_upload)} [cyan]Datafiles2 exists on[/cyan] {len(mask_data)}[cyan] total[/bold green]")
         def process_datafile2(img):
             round_order = int(img.get("Round Order"))
             settings = {"Camera Angle": img.get("Angle")}
-            if round_order in PlantMask:
-                settings.update(PlantMask[round_order])
+            if round_order in plant_mask:
+                settings.update(plant_mask[round_order])
 
             desc = {
                 "rdf_type": f"vocabulary:{rdf_type_2}",
                 "date": img["Date"],
-                "target": ScObj_uri[img["Plant ID"]],
+                "target": sci_obj_uri[img["Plant ID"]],
                 "metadata": {"Round Order": round_order, "Imported with": f"SIMPLE {__version__}"},
                 "provenance": {
                     "uri": img["Prov"],
@@ -362,10 +335,9 @@ def import_datafiles(document_miappe, document_data, wd_experience, prov_dict, d
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             futures = [executor.submit(process_datafile2, img) for img in mask_to_upload]
-            for future in track(concurrent.futures.as_completed(futures), total=len(futures), description="[bold blue]Uploading Datafile2[/bold blue]"):
+            for future in concurrent.futures.as_completed(futures):
                 if datetime.datetime.now() > timelimit:
                     connexion(login, silex_API_Client)
                     timelimit = datetime.datetime.now() + datetime.timedelta(minutes=30)
                 future.result()
-
-    console.print('[bold green][✓] Succeeded in importing datafiles ![/bold green]')
+    return 1
