@@ -47,7 +47,7 @@ def get_round_protocol_info(wd_experience,document_data):
                 with open(key, encoding='utf-16') as file:
                     xml_str = file.read().replace("\x00", "")
                 root = ET.fromstring(xml_str)
-            except Exception as e:
+            except Exception:
                 with open(key) as file:
                     xml_str = file.read().replace("\x00", "")
                 root = ET.fromstring(xml_str)
@@ -69,7 +69,7 @@ def get_round_protocol_info(wd_experience,document_data):
                     CamPos[round_index] = CamPos_rd
         console.print("[bold green][✓] PlantMask and Camera Position Info found ![/bold green]")
     else:
-        stop = Prompt.ask("[bold red][×] PlantMask and Camera Position was not found, do you want to continue?\n(00-RoundProtocol missing) [/bold red]", choices=["y", "n"], default="y")
+        stop = Prompt.ask("[bold red][×] PlantMask and Camera Position was not found, do you want to continue?\nIt is generally not a problem, except if you wanted to use round protocol info. IT must be in a folder named '00-RoundProtocol'[/bold red]", choices=["y", "n"], default="y")
         if stop == "n":
             logger.info("User cancelled the import : (00-RoundProtocol missing)")
             raise SimpleBaseException("User cancelled import at Round protocol phase?")
@@ -84,9 +84,9 @@ def parse_excel_for_metadata(df_data, dict_paths, prov, file_type):
         pid = row.get("PID",None)
         
         if file_type == "datafile1":
-            filename = row.get("FEC_Filename")
+            filename = row.get("Datafile1_Filename")
         else:
-            filename = row.get("FEM_Filename")
+            filename = row.get("Datafile2_Filename")
             
         if pd.isna(filename) or filename not in dict_paths:
             console.print(f"warning : {filename}")
@@ -155,8 +155,8 @@ def import_datafiles(document_miappe, document_data, wd_experience, prov_dict, d
     #traitement des datafiles1
     dict_datafile1 = {}
     missing_datafile1 = set()
-    if 'FEC_Filename' in df_data.columns:
-        set_ls_datafile1 = set(df_data['FEC_Filename'].dropna().unique())
+    if 'Datafile1_Filename' in df_data.columns:
+        set_ls_datafile1 = set(df_data['Datafile1_Filename'].dropna().unique())
         dict_datafile1 = {f: ls_files_dict[f] for f in set_ls_datafile1 if f in ls_files_dict}
         missing_datafile1 = set_ls_datafile1 - set(dict_datafile1.keys())
         if missing_datafile1:
@@ -167,11 +167,11 @@ def import_datafiles(document_miappe, document_data, wd_experience, prov_dict, d
         logger.error("User tried to import datafiles without 'datafile1_Filename column")
         raise DataImportError("You are importing datafiles, you have to specify the name of the file for each row in a column named 'Datafile1_Filename'\n Leaving client.[/bold red]")
     #traitement des datafiles2
-    has_datafile2 = 'FEM_Filename' in df_data.columns
+    has_datafile2 = 'Datafile2_Filename' in df_data.columns
     dict_datafile2 = {}
     missing_datafile2 = set()
     if has_datafile2:
-        set_ls_datafile2 = set(df_data['FEM_Filename'].dropna().unique())
+        set_ls_datafile2 = set(df_data['Datafile2_Filename'].dropna().unique())
         dict_datafile2 = {f: ls_files_dict[f] for f in set_ls_datafile2 if f in ls_files_dict}
         missing_datafile2 = set_ls_datafile2 - set(dict_datafile2.keys())
         if missing_datafile2:

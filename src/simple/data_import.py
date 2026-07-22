@@ -340,6 +340,8 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
     provenance_morpho = None
     provenance_datafile1 = None
     provenance_datafile2 = None
+    rdf_type_2 = None
+    rdf_type_1 = None
     datafile_name = os.path.basename(document_data)
     for suffix, config in datafile_provenance.items():
         if datafile_name == suffix:
@@ -434,7 +436,7 @@ def create_data(document_data,document_miappe,login,wd_experience,silex_API_Clie
                 else:
                     provenance_used=None
                     setting_dict={"Camera Angle": row["Angle"]}
-                    if 'FEM_Filename' in df_data.columns or 'FEC_Filename' in df_data.columns:
+                    if 'Datafile1_Filename' in df_data.columns or 'Datafile2_Filename' in df_data.columns:
                         for item in mask_uri:
                                 if item["Plant ID"]==row["Plant ID"] and item["Date"]==row['Measuring Time'].replace('+', '.000+'):
                                     provenance_used=silex.ProvEntityModel(uri=item["uri"], rdf_type=f"vocabulary:{rdf_type}")
