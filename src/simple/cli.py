@@ -13,6 +13,7 @@ from simple.erreurs import NetworkError, SimpleBaseException,AuthenticationError
 from simple.systeme_logs import logger
 
 def ui_import_factor(document_miappe, silex_API_Client):
+    console.print("[bold green]__________________________Factor Importation__________________________[bold green]")
     console.print(f"[cyan]Miappe file :[/cyan] {document_miappe}")
     logger.info(f"Miappe file : {document_miappe}")
 
@@ -26,6 +27,7 @@ def ui_import_factor(document_miappe, silex_API_Client):
     return factors_levels_uri, factors_uri
 
 def ui_import_germplasm(document_miappe, silex_API_Client):
+    console.print("[bold green]__________________________Germplasm Importation__________________________[bold green]")
     console.print(f"[cyan]Miappe file :[/cyan] {document_miappe}")
     logger.info(f"Miappe file : {document_miappe}")
 
@@ -38,7 +40,7 @@ def ui_import_germplasm(document_miappe, silex_API_Client):
     return germplasms_uri,species_uri
 
 def ui_import_sci_obj(document_data,document_miappe,silex_API_Client):
-
+    console.print("[bold green]__________________________Scientific objects Importation__________________________[bold green]")
     with console.status("[green]Importing/Searching Scientific objects on OpenSilex instance...[/green]", spinner="aesthetic"):
         sci_obj_uri,created_sci_obj = create_sci_obj(document_data, document_miappe, silex_API_Client)
     found_sci_obj=len(sci_obj_uri)-created_sci_obj
@@ -53,7 +55,7 @@ def ui_import_sci_obj(document_data,document_miappe,silex_API_Client):
     return sci_obj_uri
 
 def ui_import_data(document_data, document_miappe,login,silex_API_Client):
-
+    console.print("[bold green]__________________________Tabular Data Importation__________________________[bold green]")
     #on apelle data_mapping pour faire le lien noms colonnes données tabulaires -> variables phis
     with console.status("[green]Checking variable map...[/green]", spinner="aesthetic"):
         morpho_info=data_mapping(document_data, document_miappe)
@@ -78,14 +80,19 @@ def ui_import_data(document_data, document_miappe,login,silex_API_Client):
     console.print("[bold green] Provenances are OK !")
 
     # on récupère le dictionnaire d'objets scientifiques
-    sci_obj_uri = ui_import_sci_obj(document_data, document_miappe, silex_API_Client)
+    with console.status("[green]Importing/Searching Scientific objects on OpenSilex instance...[/green]", spinner="aesthetic"):
+        sci_obj_uri, created_sci_obj = create_sci_obj(document_data, document_miappe, silex_API_Client)
 
+    found_sci_obj=len(sci_obj_uri)-created_sci_obj
+    console.print(f"[bold green]End of search : {found_sci_obj} found,{created_sci_obj} created. [/bold green]")
+    
+    #on gère l'affichage des progression d'importation de données
     def afficher_progres(nom_variable, nb_lignes):
 
         if nb_lignes > 0:
-            console.print(f"[bold cyan] ↳ Succès : {nb_lignes} lignes de données ajoutées pour [green]{nom_variable}[/green][/bold cyan]")
+            console.print(f"[bold cyan] ↳ Sucess : {nb_lignes} lines of data added to [green]{nom_variable}[/green][/bold cyan]")
         else:
-            console.print(f"[dim white] ↳ Ignoré : Les données pour {nom_variable} étaient déjà présentes.[/dim white]")
+            console.print(f"[dim white] ↳ Ignored : Data for {nom_variable} were already uploaded.[/dim white]")
 
     try:
         with console.status("[green]Uploading data to OpenSilex... This will be quick.[/green]", spinner="aesthetic"):
@@ -99,7 +106,7 @@ def ui_import_data(document_data, document_miappe,login,silex_API_Client):
     console.print("[bold green]Data Import Over![/bold green]")
 
 def ui_import_datafiles(document_miappe, document_data, wd_experience, repertoire_photos, login, silex_API_Client):
-
+    console.print("[bold green]__________________________Datafiles Importation__________________________[bold green]")
     #taking care of provenances
     with console.status("[green]Checking provenances...[/green]", spinner="aesthetic"):
         prov_dict, datafile_provenance, missing_provs = get_provenances(document_data, document_miappe, silex_API_Client)

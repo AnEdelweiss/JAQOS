@@ -156,7 +156,7 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
     name_exp = dataframe['name'].dropna().iloc[0]
     exp_search = silex.ExperimentsApi(silex_API_Client).search_experiments(name=name_exp)["result"]
     exp_uri = exp_search[0].uri
-    logger.info(name_exp,exp_uri)
+    logger.info(f'exp name : {name_exp}  exp uri : {exp_uri}')
     #GETTING PID and angle
     if 'PID' in df_data.columns:
         pid = df_data['PID'].unique()[0]
@@ -215,7 +215,7 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
     toutes_datafile1_triees = sorted(corr_data.values(), key=lambda x: x["Path"])
     
     # On isole les 5 premières pour le test
-    datafile1_test_subset = toutes_datafile1_triees[30:35]
+    datafile1_test_subset = toutes_datafile1_triees[1000:1005]
 
     corr_to_upload = [
         img for img in datafile1_test_subset 
@@ -286,13 +286,17 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
             except Exception as e :
                 logger.error(f"failed to upload image :{e} ")
                 if status_callback:
-                    status_callback("[bold yellow] /!\ A datafile failed to upload, please check the logs for informations, continuing...[/bold yellow]")
+                    status_callback("[bold yellow] [!] A datafile failed to upload, please check the logs for informations, continuing...[/bold yellow]")
             if progress_callback:
                 progress_callback(nom_tache_datafile1,avance=1)
 
-    if status_callback:
-        status_callback("[green][✓] Datafile1 upload complete! [/green]")
-    logger.info("[green][✓] Datafile1 upload complete! [/green]")
+    if len(corr_to_upload)>0:
+        if status_callback:
+            status_callback(f"[green][✓] Datafile1 upload complete! : {len(corr_to_upload)} uploads! [/green]")
+            logger.info(f"[green][✓] Datafile1 upload complete! {len(corr_to_upload)} uploads![/green]")
+    else:
+        status_callback("[green][✓] All Datafiles 1 were already uploaded (or there was no datafiles1)[/green]")
+        logger.info("[green][✓] All Datafiles 1 were already uploaded (or there was no datafiles1) [/green]")
 
     # IMPORT DATAFILE 2 (OPTIONNEL)
     if has_datafile2 and provenance_datafile2:
@@ -329,7 +333,7 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
         # # TEST TEST TEST
         toutes_datafile2_triees = sorted(mask_data.values(), key=lambda x: x["Path"])
         
-        datafile2_test_subset = toutes_datafile2_triees[30:35]
+        datafile2_test_subset = toutes_datafile2_triees[1000:1005]
 
         mask_to_upload = [
             img for img in datafile2_test_subset 
@@ -375,12 +379,16 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
                 except Exception as e :
                     logger.error(f"failed to upload image :{e} ")
                     if status_callback:
-                        status_callback("[bold yellow] /!\ A datafile failed to upload, please check the logs for informations, continuing...[/bold yellow]")
+                        status_callback("[bold yellow] [!] A datafile failed to upload, please check the logs for informations, continuing...[/bold yellow]")
                     
                     if progress_callback:
                         progress_callback(nom_tache_datafile2,avance=1)
             
-        if status_callback:
-            status_callback("[green][✓] Datafile2 upload complete! [/green]")
-        logger.info("[green][✓] Datafile2 upload complete! [/green]")
+        if len(mask_to_upload)>0:
+            if status_callback:
+                status_callback(f"[green][✓] Datafile2 upload complete! : {len(mask_to_upload)} uploads! [/green]")
+                logger.info(f"[green][✓] Datafile2 upload complete! {len(mask_to_upload)} uploads![/green]")
+        else:
+            status_callback("[green][✓] All Datafiles 2 were already uploaded (or there was no datafiles1)[/green]")
+            logger.info("[green][✓] All Datafiles 2 were already uploaded (or there was no datafiles1) [/green]")
     return 1

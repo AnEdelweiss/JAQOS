@@ -24,6 +24,7 @@ def api_find_experiment_by_name(silex_API_Client,name_exp):
     return exp_data["result"]
 
 def create_experiment(document_miappe, choix_dossier, silex_API_Client):
+    console.print("[bold green]__________________________Experiment Importation__________________________[bold green]")
     console.print(f"[cyan]File : [/cyan] {document_miappe}")
     dataframe = pd.read_excel(document_miappe, sheet_name='experiment', header=1)
     dataframe.drop(dataframe.columns[dataframe.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)

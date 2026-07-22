@@ -401,7 +401,7 @@ def create_data(document_data, document_miappe, login, silex_API_Client, morpho_
                 round_order = data.metadata.get('Round Order') if data.metadata else None
                 existing_data_cache.add((data.target, data._date, round_order))
         #GET/CREATE NUMERICAL DATA
-        pas=2000
+        pas=4000
         for slc in range(0, len(df_data), pas): 
             df_Slice = df_data.iloc[slc : slc + pas]
             bodies=[]
