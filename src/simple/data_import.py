@@ -33,7 +33,7 @@ def create_factor(document_miappe, silex_API_Client):
     exp_api = silex.ExperimentsApi(silex_API_Client)
     exp_search = exp_api.search_experiments(name=name_exp)["result"]
     name_exp_uri = {name_exp: exp_search[0].uri}
-
+    logger.info(name_exp_uri)
     dico_factor={}
 
     for row in track(list(dataframe.to_dict('records')), description="[green]Importing factors...[/green]"):
@@ -137,7 +137,7 @@ def create_sci_obj(document_data,document_miappe,silex_API_Client):
         logger.error(f"Experiment {name_exp} was not found, check if the name is correct or create the experiment before scientific objects")
         raise DataImportError(f"[bold red]This experiment doesn't exist, please check if the name is correct : {name_exp}[/bold red]")
     name_exp_uri = {name_exp: exp_search["result"][0].uri}
-    
+    logger.info(name_exp_uri)
     # Récupérer un dictionnaire de facteurs levels pour cette experience
     api_response = silex.ExperimentsApi(silex_API_Client).get_available_factors(exp_search["result"][0].uri)
     if api_response["result"]:
@@ -325,6 +325,7 @@ def create_data(document_data, document_miappe, login, silex_API_Client, morpho_
     name_exp = dataframe['name'].dropna().iloc[0]
     exp_search = silex.ExperimentsApi(silex_API_Client).search_experiments(name=name_exp)
     name_exp_uri = {name_exp: exp_search["result"][0].uri}
+    logger.info(name_exp_uri)
     #Gestion provenances
     provenance_morpho = None
     provenance_datafile1 = None

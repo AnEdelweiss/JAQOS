@@ -8,5 +8,7 @@ wheels/
 test/
 exp_database/
 src/simple/logs_SIMPLE
+essais
+tests
 # Virtual environments
 .venv

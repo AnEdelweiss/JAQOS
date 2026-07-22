@@ -156,6 +156,7 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
     name_exp = dataframe['name'].dropna().iloc[0]
     exp_search = silex.ExperimentsApi(silex_API_Client).search_experiments(name=name_exp)["result"]
     exp_uri = exp_search[0].uri
+    logger.info(name_exp,exp_uri)
     #GETTING PID and angle
     if 'PID' in df_data.columns:
         pid = df_data['PID'].unique()[0]
