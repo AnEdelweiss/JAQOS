@@ -2,6 +2,7 @@ import sys
 import opensilexClientToolsPython as silex
 from rich.prompt import Prompt, IntPrompt
 from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeElapsedColumn, TimeRemainingColumn
 from simple.ui import console, BANNER, MENU_CREATION, menu, choix_repertoire_travail,HELP_MENU
 from simple.auth import INSTANCES, get_login,connexion, is_connected,check_connection_internet
 from simple.experiment import find_Exp, create_experiment
@@ -161,29 +162,45 @@ def ui_import_datafiles(document_miappe, document_data, wd_experience, repertoir
     def afficher_statut_tel(mess):
         console.print(f"[bold cyan][+][bold cyan][bold green]{mess}[/bold green]")
 
-    try:
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        TimeElapsedColumn(),
+        TimeRemainingColumn(),
+        console=console
+    ) as progress_bar:
         
-        execute_datafiles_upload(
-        document_miappe,
-        document_data,
-        df_data,
-        dict_datafile1,
-        dict_datafile2,
-        has_datafile2,
-        prov_dict,
-        datafile_provenance,
-        sci_obj_uri,
-        cam_pos,
-        plant_mask,
-        login,
-        silex_API_Client,
-        status_callback=afficher_statut_tel,
-        progress_callback=None 
-    )
-        console.print('[bold green][✓] Succeeded in importing datafiles ![/bold green]')
-    except Exception as e:
-        logger.exception("Datafile upload failed")
-        raise SimpleBaseException("An error occurred during datafile upload.")
+        taches_actives = {}
+
+        def gestion_barre(nom_tache,total=None,avance=0):
+            if nom_tache not in taches_actives:
+                taches_actives[nom_tache]=progress_bar.add_task(nom_tache,total=total)
+            if avance>0:
+                progress_bar.advance(taches_actives[nom_tache],advance=avance)
+        try:
+            execute_datafiles_upload(
+            document_miappe,
+            document_data,
+            df_data,
+            dict_datafile1,
+            dict_datafile2,
+            has_datafile2,
+            prov_dict,
+            datafile_provenance,
+            sci_obj_uri,
+            cam_pos,
+            plant_mask,
+            login,
+            silex_API_Client,
+            status_callback=afficher_statut_tel,
+            progress_callback=gestion_barre 
+        )
+            console.print('[bold green][✓] Succeeded in importing all datafiles ![/bold green]')
+        except Exception as e:
+            logger.exception("Datafile upload failed")
+            raise SimpleBaseException("An error occurred during datafile upload.")
 
 def main():
     try:
@@ -279,8 +296,8 @@ def main():
                             create_experiment(document_miappe, choix_dossier, silex_API_Client)
                             ui_import_germplasm(document_miappe, silex_API_Client)
                             ui_import_factor(document_miappe, silex_API_Client)
-                            create_sci_obj(document_data,document_miappe,silex_API_Client)
-                            ui_import_datafiles(wd_experience,document_data,document_miappe,repertoire_photos,login,silex_API_Client)
+                            ui_import_sci_obj(document_data,document_miappe,silex_API_Client)
+                            ui_import_datafiles(document_miappe, document_data, wd_experience, repertoire_photos, login, silex_API_Client)
                             ui_import_data(document_data, document_miappe,login,silex_API_Client)
                             break
 

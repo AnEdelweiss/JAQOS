@@ -9,7 +9,7 @@ from simple.ui import console
 from simple.auth import connexion
 from simple.__init__ import __version__
 from simple.systeme_logs import logger
-from simple.erreurs import DataImportError
+from simple.erreurs import SimpleBaseException,DataImportError
 import datetime
 import concurrent.futures
     
@@ -80,7 +80,8 @@ def parse_excel_for_metadata(df_data, dict_paths, prov, file_type):
             filename = row.get("Datafile2_Filename")
             
         if pd.isna(filename) or filename not in dict_paths:
-            console.print(f"warning : {filename}")
+            logger.error(f"warning : {filename} in 'data files' sheet of the  MIAPPE file is either empty or maybe there is a typo etc...")
+            raise SimpleBaseException(f"warning : {filename} in 'data files' sheet of the  MIAPPE file is either empty or maybe there is a typo etc...")
             continue
 
         desired_format = "%Y-%m-%dT%H:%M:%S%z"
@@ -158,13 +159,15 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
     #GETTING PID and angle
     if 'PID' in df_data.columns:
         pid = df_data['PID'].unique()[0]
-        status_callback(f'[bold cyan][✓] PID found:[/bold cyan] {pid}')
+        if status_callback:
+            status_callback(f'[bold cyan][✓] PID found:[/bold cyan] {pid}')
         logger.info(f'[bold cyan][✓] PID found:[/bold cyan] {pid}')
     else :
         pid = None
     if 'Angle' not in df_data.columns:
         df_data["Angle"] = None
-        status_callback("No angle data was found in the tabular data. It is not a problem, if it is intentional.")
+        if status_callback:
+            status_callback("No angle data was found in the tabular data. It is not a problem, if it is intentional.")
         logger.info("No angle data was found in the tabular data. It is not a problem, if it is intentional.")
 
     dat_api = silex.DataApi(silex_API_Client)
@@ -184,18 +187,22 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
             provenance_datafile2 = prov_dict.get(val2) if not pd.isna(val2) else None
             rdf_type_2 = rdf2 if not pd.isna(rdf2) else None
             break
-    status_callback(f"[green][✓] Provenance for datafile1 found : {provenance_datafile1}[/green]")
+    if status_callback:
+        status_callback(f"[green][✓] Provenance for datafile1 found : {provenance_datafile1}[/green]")
     logger.info(f"[green][✓] Provenance for datafile1 found : {provenance_datafile1}[/green]")
     if provenance_datafile2 is not None:
-        status_callback(f"[green][✓] Provenance for datafile2 found : {provenance_datafile2}[/green]")
+        if status_callback:
+            status_callback(f"[green][✓] Provenance for datafile2 found : {provenance_datafile2}[/green]")
         logger.info(f"[green][✓] Provenance for datafile2 found : {provenance_datafile2}[/green]")
 
     # IMPORT DATAFILE 1
     corr_data = parse_excel_for_metadata(df_data, dict_datafile1, provenance_datafile1, "datafile1")
-    status_callback("[green][✓] datafile1 data parsing OK [/green]")
+    if status_callback:
+        status_callback("[green][✓] datafile1 data parsing OK [/green]")
     logger.info("[green][✓] datafile1 data parsing OK [/green]")
     existing_datafile1_keys = get_existing_datafiles(dat_api, provenance_datafile1, exp_uri)
-    status_callback("[green][✓] Search for existing datafiles1 OK [/green]")
+    if status_callback:
+        status_callback("[green][✓] Search for existing datafiles1 OK [/green]")
     logger.info("[green][✓] Search for existing datafiles1 OK [/green]")
     
     corr_to_upload = [
@@ -207,15 +214,15 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
     toutes_datafile1_triees = sorted(corr_data.values(), key=lambda x: x["Path"])
     
     # On isole les 5 premières pour le test
-    datafile1_test_subset = toutes_datafile1_triees[50:52]
+    datafile1_test_subset = toutes_datafile1_triees[30:35]
 
     corr_to_upload = [
         img for img in datafile1_test_subset 
         if (sci_obj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_datafile1_keys
     ]
     # ###TEST
-
-    status_callback(f"[bold green]{len(corr_data) - len(corr_to_upload)}[cyan] Datafiles1 exists on [bold green]{len(corr_data)}[/bold green] total [/cyan]")
+    if status_callback:
+        status_callback(f"[bold green]{len(corr_data) - len(corr_to_upload)}[cyan] Datafiles1 exists on [bold green]{len(corr_data)}[/bold green] total [/cyan]")
     logger.info(f"[bold green]{len(corr_data) - len(corr_to_upload)}[cyan] Datafiles1 exists on [bold green]{len(corr_data)}[/bold green] total [/cyan]")
 
     timelimit = datetime.datetime.now() + datetime.timedelta(minutes=30)
@@ -262,13 +269,29 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
         else:
             dat_api.post_data_file(description=json.dumps(desc), file=img["Path"])
 
+    nom_tache_datafile1="[bold blue]Uploading datafiles 1...[/bold blue]"
+    if progress_callback and len(corr_to_upload)>0:
+        progress_callback(nom_tache_datafile1,total=len(corr_to_upload))
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         futures = [executor.submit(process_datafile1, img) for img in corr_to_upload]
         for future in concurrent.futures.as_completed(futures):
             if datetime.datetime.now() > timelimit:
                 connexion(login, silex_API_Client)
                 timelimit = datetime.datetime.now() + datetime.timedelta(minutes=30)
-            future.result()
+            
+            try:
+                future.result()
+            except Exception as e :
+                logger.error(f"failed to upload image :{e} ")
+                if status_callback:
+                    status_callback("[bold yellow] /!\ A datafile failed to upload, please check the logs for informations, continuing...[/bold yellow]")
+            if progress_callback:
+                progress_callback(nom_tache_datafile1,avance=1)
+
+    if status_callback:
+        status_callback("[green][✓] Datafile1 upload complete! [/green]")
+    logger.info("[green][✓] Datafile1 upload complete! [/green]")
 
     # IMPORT DATAFILE 2 (OPTIONNEL)
     if has_datafile2 and provenance_datafile2:
@@ -282,7 +305,8 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
         }
 
         mask_data = parse_excel_for_metadata(df_data, dict_datafile2, provenance_datafile2, "datafile2")
-        status_callback("[green][✓] datafile2 data parsing OK [/green]")
+        if status_callback:
+            status_callback("[green][✓] datafile2 data parsing OK [/green]")
         logger.info("[green][✓] datafile2 data parsing OK [/green]")
 
         for img in mask_data.values():
@@ -292,7 +316,8 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
             img["Prov_Used"] = uri_trouve
 
         existing_datafile2_keys = get_existing_datafiles(dat_api, provenance_datafile2, exp_uri)
-        status_callback("[green][✓] Search for existing datafiles2 OK [/green]")
+        if status_callback:
+            status_callback("[green][✓] Search for existing datafiles2 OK [/green]")
         logger.info("[green][✓] Search for existing datafiles2 OK [/green]")
 
         mask_to_upload = [
@@ -303,7 +328,7 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
         # # TEST TEST TEST
         toutes_datafile2_triees = sorted(mask_data.values(), key=lambda x: x["Path"])
         
-        datafile2_test_subset = toutes_datafile2_triees[50:52]
+        datafile2_test_subset = toutes_datafile2_triees[30:35]
 
         mask_to_upload = [
             img for img in datafile2_test_subset 
@@ -333,11 +358,28 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
             }
             dat_api.post_data_file(description=json.dumps(desc), file=img["Path"])
 
+        nom_tache_datafile2="[bold blue]Uploading datafiles 2...[/bold blue]"
+
+        if progress_callback and len(mask_to_upload)>0:
+            progress_callback(nom_tache_datafile2,total=len(mask_to_upload))
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             futures = [executor.submit(process_datafile2, img) for img in mask_to_upload]
             for future in concurrent.futures.as_completed(futures):
                 if datetime.datetime.now() > timelimit:
                     connexion(login, silex_API_Client)
                     timelimit = datetime.datetime.now() + datetime.timedelta(minutes=30)
-                future.result()
+                try:
+                    future.result()
+                except Exception as e :
+                    logger.error(f"failed to upload image :{e} ")
+                    if status_callback:
+                        status_callback("[bold yellow] /!\ A datafile failed to upload, please check the logs for informations, continuing...[/bold yellow]")
+                    
+                    if progress_callback:
+                        progress_callback(nom_tache_datafile2,avance=1)
+            
+        if status_callback:
+            status_callback("[green][✓] Datafile2 upload complete! [/green]")
+        logger.info("[green][✓] Datafile2 upload complete! [/green]")
     return 1
