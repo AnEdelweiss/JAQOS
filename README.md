@@ -43,11 +43,11 @@ exp_database/
 ├── experiment_3/
 └── experiment_.../
 ```
+
 ## Download
 
 You can go to 'releases' section here : [Releases](https://github.com/AnEdelweiss/SIMPLE/releases)
 and download the latest one for your distribution (Linux/Windows), then just double click it ! and follow the instructions ;)
-
 
 ## The input miappe file
 
@@ -65,7 +65,7 @@ You should NOT rename this file NOR change the name of the sheets, this is what 
 
 as this is a work in progress,works with the tabular data provided in exp_database/test_SIMPLE/RGB1_Morpho_Manual.xlsx
 
-## Instructions for running the code via an IDE :
+## Instructions for using the code with an IDE :
 
 This project requires Python 3.14.
 
@@ -80,10 +80,10 @@ Everything should work !
 
 ## Project roadmap :
 
-- Creating a 'troubleshooting/Q&A' section and a more thorough tutorial/doc :) 
-- Updating the blank miappe available in the github
+- Creating a 'troubleshooting/Q&A' section and a more thorough tutorial/doc :)
+- ~~Updating the blank miappe available in the github~~
 - Make a logo for the program :p
-- refactoring :-(
+- ~~refactoring :-(~~
 - ~~Using the rich library.~~
 - ~~English translation.~~
 - ~~Photo upploadng.~~
