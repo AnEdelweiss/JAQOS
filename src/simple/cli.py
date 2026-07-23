@@ -3,21 +3,53 @@ import opensilexClientToolsPython as silex
 from rich.prompt import Prompt, IntPrompt
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeElapsedColumn, TimeRemainingColumn
-from simple.ui import console, BANNER, MENU_CREATION, menu, choix_repertoire_travail,HELP_MENU
+from simple.ui import console, BANNER, MENU_CREATION, menu, choix_repertoire_travail,HELP_MENU,change_tabular_data,show_data_table_dictionnaire,show_data_panel
 from simple.auth import INSTANCES, get_login,connexion, is_connected,check_connection_internet
-from simple.experiment import find_Exp, create_experiment
+from simple.experiment import create_experiment,api_find_experiment_by_name
 from simple.data_import import create_sci_obj,create_data,create_factor,create_germplasm,get_provenances,data_mapping
-from simple.ui import show_data_table_dictionnaire
 from simple.datafile_import import execute_datafiles_upload,check_for_datafiles,get_round_protocol_info
-from simple.erreurs import NetworkError, SimpleBaseException,AuthenticationError
+from simple.erreurs import NetworkError, SimpleBaseException,AuthenticationError,DataImportError
 from simple.systeme_logs import logger
+
+def ui_find_experiment(silex_API_Client):
+    name_exp = Prompt.ask("[cyan]What experiment are you looking for?[/cyan]")
+    
+    with console.status("[bold green]Searching...[/bold green]"):
+        exp_data = api_find_experiment_by_name(silex_API_Client, name_exp)
+        
+    if not exp_data:
+        Prompt.ask("[bold red]No experiment with that name were found. :([/bold red]\nPress Enter to go back to the main menu")
+        return
+
+    exp_data = exp_data[0]
+    names_to_attribute_map = {"URI": "uri", "Name": "name", "Description": "description", "Objectives": "objective"}
+    show_data_panel("Experiment infos", exp_data, names_to_attribute_map)
+    Prompt.ask("Press Enter to go back to the main menu")
+
+def ui_create_experiment(document_miappe,silex_API_Client):
+    console.print("[bold green]__________________________Experiment Importation__________________________[/bold green]")
+    console.print(f"[cyan]File : [/cyan] {document_miappe}")
+    
+    def afficher_statut(mess):
+        console.print(f"[bold cyan][+][bold cyan][bold green]{mess}[/bold green]")
+
+    try:
+        with console.status("[bold green]Processing experiment data...[/bold green]"):
+            results = create_experiment(document_miappe,silex_API_Client,status_callback=afficher_statut)
+        # affichage final 
+        for nom, uri in results.items():
+            console.print(f"[bold cyan]Your experiment {nom} has the following uri:[/bold cyan] {uri}")
+            
+    except DataImportError as e:
+        #Gestion erreurs
+        console.print(f"\n[bold red]Import Aborted:[/bold red] {e}")
 
 def ui_import_factor(document_miappe, silex_API_Client):
     console.print("[bold green]__________________________Factor Importation__________________________[bold green]")
     console.print(f"[cyan]Miappe file :[/cyan] {document_miappe}")
     logger.info(f"Miappe file : {document_miappe}")
 
-    with console.status("[green]Importing factors to OpenSilex...[/green]", spinner="aesthetic"):
+    with console.status("[green]Importing/Searching for factors on Phis Instance...[/green]", spinner="aesthetic"):
         factors_levels_uri, factors_uri = create_factor(document_miappe, silex_API_Client)
 
     logger.info(f"{factors_uri},\n{factors_uri}")
@@ -31,7 +63,7 @@ def ui_import_germplasm(document_miappe, silex_API_Client):
     console.print(f"[cyan]Miappe file :[/cyan] {document_miappe}")
     logger.info(f"Miappe file : {document_miappe}")
 
-    with console.status("[green]Importing germplasms to OpenSilex...[/green]", spinner="aesthetic"):
+    with console.status("[green]Importing/searching for germplasms on Phis instance...[/green]", spinner="aesthetic"):
         germplasms_uri, species_uri = create_germplasm(document_miappe, silex_API_Client)
         
     logger.info(f"{germplasms_uri},\n{species_uri}")
@@ -166,8 +198,6 @@ def ui_import_datafiles(document_miappe, document_data, wd_experience, repertoir
         raise SimpleBaseException("User aborted datafile import")
 
     #enfin on téléverse :
-    def afficher_statut_tel(mess):
-        console.print(f"[bold cyan][+][bold cyan][bold green]{mess}[/bold green]")
 
     with Progress(
         SpinnerColumn(),
@@ -180,6 +210,8 @@ def ui_import_datafiles(document_miappe, document_data, wd_experience, repertoir
     ) as progress_bar:
         
         taches_actives = {}
+        def afficher_statut(mess):
+            progress_bar.console.print(f"[bold cyan][+][bold cyan][bold green]{mess}[/bold green]")
 
         def gestion_barre(nom_tache,total=None,avance=0):
             if nom_tache not in taches_actives:
@@ -201,10 +233,10 @@ def ui_import_datafiles(document_miappe, document_data, wd_experience, repertoir
             plant_mask,
             login,
             silex_API_Client,
-            status_callback=afficher_statut_tel,
+            status_callback=afficher_statut,
             progress_callback=gestion_barre 
         )
-            console.print('[bold green][✓] Succeeded in importing all datafiles ![/bold green]')
+            progress_bar.console.print('[bold green][✓] Succeeded in importing all datafiles ![/bold green]')
         except Exception as e:
             logger.exception("Datafile upload failed")
             raise SimpleBaseException("An error occurred during datafile upload.")
@@ -252,7 +284,7 @@ def main():
 
             elif user_input == 2:
                 if is_connected(silex_API_Client):
-                    find_Exp(silex_API_Client)
+                    ui_find_experiment(silex_API_Client)
                 else:
                     console.print("[red]Please try to log in first.[/red]")
 
@@ -281,7 +313,7 @@ def main():
                         choix_creation = IntPrompt.ask("[green]Please make your choice[/green]")
 
                         if choix_creation == 1:
-                            create_experiment(document_miappe, choix_dossier, silex_API_Client)
+                            ui_create_experiment(document_miappe, silex_API_Client)
 
                         elif choix_creation == 2:
                             ui_import_germplasm(document_miappe, silex_API_Client)
@@ -299,14 +331,16 @@ def main():
                             ui_import_data(document_data, document_miappe,login,silex_API_Client)
 
                         elif choix_creation == 7:
-
-                            create_experiment(document_miappe, choix_dossier, silex_API_Client)
+                            ui_create_experiment(document_miappe, silex_API_Client)
                             ui_import_germplasm(document_miappe, silex_API_Client)
                             ui_import_factor(document_miappe, silex_API_Client)
                             ui_import_sci_obj(document_data,document_miappe,silex_API_Client)
                             ui_import_datafiles(document_miappe, document_data, wd_experience, repertoire_photos, login, silex_API_Client)
                             ui_import_data(document_data, document_miappe,login,silex_API_Client)
                             break
+                        
+                        elif choix_creation == 8:
+                            wd_experience,document_data,repertoire_photos=change_tabular_data(wd_experience)
 
                         elif choix_creation == 9:
                             break

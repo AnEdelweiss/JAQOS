@@ -1,11 +1,8 @@
 import os
 import json
-import time
 from lxml import etree as ET
 import pandas as pd
 import opensilexClientToolsPython as silex
-from rich.progress import track
-from simple.ui import console
 from simple.auth import connexion
 from simple.__init__ import __version__
 from simple.systeme_logs import logger
@@ -68,7 +65,7 @@ def get_round_protocol_info(wd_experience,document_data):
 
 def parse_excel_for_metadata(df_data, dict_paths, prov, file_type):
     metadata_dict = {}
-    for row in track(list(df_data.to_dict('records')), total=len(df_data), description="[green]processing metadatas[/green]"):
+    for row in list(df_data.to_dict('records')):
         exp_id = row['Experiment ID']
         round_order = row['Round Order']
         tray_id = row['Plant ID']
@@ -215,7 +212,7 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
     toutes_datafile1_triees = sorted(corr_data.values(), key=lambda x: x["Path"])
     
     # On isole les 5 premières pour le test
-    datafile1_test_subset = toutes_datafile1_triees[1000:1005]
+    datafile1_test_subset = toutes_datafile1_triees[1210:1215]
 
     corr_to_upload = [
         img for img in datafile1_test_subset 
@@ -300,8 +297,6 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
 
     # IMPORT DATAFILE 2 (OPTIONNEL)
     if has_datafile2 and provenance_datafile2:
-        with console.status("Waiting for Datafiles 1..."):
-            time.sleep(2)
         datafile1_uri_map = {
             (elts.target, elts._date): elts.uri
             for elts in dat_api.get_data_file_descriptions_by_search(
@@ -333,7 +328,7 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
         # # TEST TEST TEST
         toutes_datafile2_triees = sorted(mask_data.values(), key=lambda x: x["Path"])
         
-        datafile2_test_subset = toutes_datafile2_triees[1000:1005]
+        datafile2_test_subset = toutes_datafile2_triees[1210:1215]
 
         mask_to_upload = [
             img for img in datafile2_test_subset 
@@ -381,8 +376,8 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
                     if status_callback:
                         status_callback("[bold yellow] [!] A datafile failed to upload, please check the logs for informations, continuing...[/bold yellow]")
                     
-                    if progress_callback:
-                        progress_callback(nom_tache_datafile2,avance=1)
+                if progress_callback:
+                    progress_callback(nom_tache_datafile2,avance=1)
             
         if len(mask_to_upload)>0:
             if status_callback:

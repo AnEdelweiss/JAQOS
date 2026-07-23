@@ -46,6 +46,7 @@ MENU_CREATION = """
   [magenta]\\[5][/magenta] I want to import datafiles. 
   [green]\\[6][/green] I want to import tabular data.
   [green]\\[7][/green] All of the above.
+  [green]\\[8][/green] Change tabular data file.
   [red]\\[9][/red] I want to return to the main menu...
 """
 HELP_MENU="""
@@ -166,6 +167,37 @@ def choix_repertoire_travail():
                     return wd_experience,choix_dossier,document_miappe,document_data,repertoire_photos
                 else:
                     console.print("[bold red]Incorrect selection... :([/bold red]")
+        else:
+            console.print("[bold red]Incorrect selection... :([/bold red]")
+
+def change_tabular_data(wd_experience):
+    
+    listedfiles = os.listdir(wd_experience)
+    nombre_fichiers = len(listedfiles)
+    
+    table_fichiers = Table(title="Files found !", header_style="bold magenta")
+    table_fichiers.add_column("Index", style="cyan")
+    table_fichiers.add_column("Nom", style="yellow")
+    for index, nom in enumerate(listedfiles):
+        table_fichiers.add_row(str(index), nom)
+    console.print(table_fichiers)
+    while True:
+        choix_temp = IntPrompt.ask(f"[green]Please chose the tabular data file (0-{nombre_fichiers-1})[/green]")
+        if 0 <= choix_temp < nombre_fichiers:
+            choix_data = listedfiles[choix_temp]
+            console.print(f"[cyan]Your tabular data file is :[/cyan] [bold green]{choix_data}[/bold green]")
+            document_data = os.path.join(wd_experience, choix_data)
+            break
+    console.print(table_fichiers)
+
+    while True:
+        choix_temp = IntPrompt.ask(f"[green]Please chose the folder containing the pictures you want to upload (0-{nombre_fichiers-1})[/green]")
+        if 0 <= choix_temp < nombre_fichiers:
+            choix_data = listedfiles[choix_temp]
+            console.print(f"[cyan]The folder is :[/cyan] [bold green]{choix_data}[/bold green]")
+            repertoire_photos = os.path.join(wd_experience, choix_data)
+
+            return wd_experience,document_data,repertoire_photos
         else:
             console.print("[bold red]Incorrect selection... :([/bold red]")
 

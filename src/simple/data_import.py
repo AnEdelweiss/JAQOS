@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 import opensilexClientToolsPython as silex
-from rich.progress import track
 from simple.auth import connexion
 from simple.__init__ import __version__
 import datetime
@@ -36,7 +35,7 @@ def create_factor(document_miappe, silex_API_Client):
     logger.info(name_exp_uri)
     dico_factor={}
 
-    for row in track(list(dataframe.to_dict('records')), description="[green]Importing factors...[/green]"):
+    for row in list(dataframe.to_dict('records')):
     
         factor = str(row["name"]).strip() if pd.notna(row["name"]) else ""
         factor_level = str(row["levels"]).strip() if pd.notna(row["levels"]) else None
