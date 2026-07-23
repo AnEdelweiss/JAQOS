@@ -237,9 +237,10 @@ def ui_import_datafiles(document_miappe, document_data, wd_experience, repertoir
             progress_callback=gestion_barre 
         )
             progress_bar.console.print('[bold green][✓] Succeeded in importing all datafiles ![/bold green]')
+
         except Exception as e:
-            logger.exception("Datafile upload failed")
-            raise SimpleBaseException("An error occurred during datafile upload.")
+            logger.exception(f"Datafile upload failed : {e}")
+            raise SimpleBaseException("An error occurred during datafile upload. Please see the logs for more information.")
 
 def main():
     try:
