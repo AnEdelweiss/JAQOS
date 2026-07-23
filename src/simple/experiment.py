@@ -39,7 +39,7 @@ def create_experiment(document_miappe, silex_API_Client,status_callback=None):
         if Exp_Src:
             NameExp_uri[NameExp] = Exp_Src[0].uri
             if status_callback: 
-                status_callback(f"[bold yellow]An experiment was found with this URI : [/bold yellow] {NameExp_uri[NameExp]}")
+                status_callback(f"[bold green][✓][/bold green] [bold yellow]An experiment was found with this URI :[/bold yellow]  {NameExp_uri[NameExp]}")
             continue
         
         if not ObjectiveExp:
@@ -52,10 +52,9 @@ def create_experiment(document_miappe, silex_API_Client,status_callback=None):
             logger.warning("Ending Date Missing From MIAPPE file experiment sheet")
 
         if status_callback:
-            status_callback(f"[bold]Objective:[/bold] {str(ObjectiveExp)[0:200]}...")
-            status_callback(f"[bold]Start Date:[/bold] {StartExp}")
-            status_callback(f"[bold]Description:[/bold] {str(DescriptionExp)[0:200]}...")
-            status_callback("[cyan]" + "_"*100 + "[/cyan]")
+            status_callback(f"[bold green]Start Date:[/bold green] [bold cyan]{StartExp}")
+            status_callback(f"[bold green]Objective:[/bold green] [bold cyan]{str(ObjectiveExp)[0:400]}...")
+            status_callback(f"[bold green]Description:[/bold green] [bold cyan]{str(DescriptionExp)[0:400]}...[/bold cyan]")
         
         #get the lists 
         ls_Organisation = to_list('organisations')
@@ -68,30 +67,30 @@ def create_experiment(document_miappe, silex_API_Client,status_callback=None):
         Organisation_uri = {}
         for organisation in ls_Organisation:
             if organisation is None:
-                logger.warning("[bold red][+]Warning[+][/bold red][bold yellow]Organisation Missing From MIAPPE file experiment sheet[/bold yellow]")
+                logger.warning("[bold yellow]Organisation Missing From MIAPPE file experiment sheet[/bold yellow]")
                 ls_Organisation=None
             else:
                 Org_Src = Org_Api.search_organizations(pattern=organisation)["result"]
                 if Org_Src:
                     Organisation_uri.update({organisation: Org_Src[0].uri})
                     if status_callback:
-                        status_callback(f"[green]{organisation}[/green] URI: {Org_Src[0].uri}")
+                        status_callback(f"[bold green][✓][/bold green] [green]{organisation}[/green] URI: {Org_Src[0].uri}")
                     ls_Organisation = list(Organisation_uri.values())
                 else:
-                    logger.warning(f"[bold red][+]Warning[+] {organisation}: Unknown Organisation [/bold red]")
+                    logger.warning(f"[bold red] {organisation}: Unknown Organisation [/bold red]")
                     ls_Organisation=None
 
         Groups_uri = {}
         for group in ls_Groups:
             if group is None:
-                logger.warning("[bold red][+]Warning[+][/bold red][bold yellow]Group Missing From MIAPPE file experiment sheet[/bold yellow]")
+                logger.warning("[bold yellow]Group Missing From MIAPPE file experiment sheet[/bold yellow]")
                 ls_Groups=None
             else:
                 Sec_Src = Sec_Api.search_groups(name=group)["result"]
                 if Sec_Src:
                     Groups_uri.update({group: Sec_Src[0].uri})
                     if status_callback:
-                        status_callback(f"[green]{group}[/green] URI: {Sec_Src[0].uri}")
+                        status_callback(f"[bold green][✓][/bold green] [green]{group}[/green] URI: {Sec_Src[0].uri}")
                     ls_Groups = list(Groups_uri.values())
                 else:
                     logger.warning(f"[bold red]{group}: Unknown Group[/bold red]")
@@ -106,7 +105,7 @@ def create_experiment(document_miappe, silex_API_Client,status_callback=None):
                 if Proj_Src:
                     Projects_uri.update({project: Proj_Src[0].uri})
                     if status_callback:
-                        status_callback(f"[green]{project}[/green] URI: {Proj_Src[0].uri}")
+                        status_callback(f"[bold green][✓][/bold green] [green]{project}[/green] URI: {Proj_Src[0].uri}")
                     ls_Projects = list(Projects_uri.values())
                 else:
                     logger.warning(f"[bold red]{project}: Unknown Project[/bold red]")
@@ -122,40 +121,40 @@ def create_experiment(document_miappe, silex_API_Client,status_callback=None):
                 if Org_Src:
                     Facilities_uri.update({facility: Org_Src[0].uri})
                     if status_callback:
-                        status_callback(f"[green]{facility}[/green] URI: {Org_Src[0].uri}")
+                        status_callback(f"[bold green][✓][/bold green] [green]{facility}[/green] URI: {Org_Src[0].uri}")
                     ls_Facilities = list(Facilities_uri.values())
                 else:
-                    logger.warning(f"[bold red][+]Warning[+] {facility}: Unknown Facility[/bold red]")
+                    logger.warning(f"[bold red] {facility}: Unknown Facility[/bold red]")
                     ls_Facilities=None
         Scientific_Supervisors_uri = {}
         for scisup in ls_Scientific_Supervisors:
             if scisup is None:
-                logger.warning("[bold red][+]Warning[+][/bold red][bold yellow]Scientific Supervisors Missing from MIAPPE experiment sheet[/bold yellow]")
+                logger.warning("[bold yellow]Scientific Supervisors Missing from MIAPPE experiment sheet[/bold yellow]")
                 ls_Scientific_Supervisors=None
             else:
                 Sec_Src = Sec_Api.search_persons(name=str(scisup))["result"]
                 if Sec_Src:
                     Scientific_Supervisors_uri.update({scisup: Sec_Src[0].uri})
                     if status_callback:
-                        status_callback(f"[green]{scisup}[/green] URI: {Sec_Src[0].uri}")
+                        status_callback(f"[bold green][✓][/bold green] [green]{scisup}[/green] URI: {Sec_Src[0].uri}")
                     ls_Scientific_Supervisors = list(Scientific_Supervisors_uri.values())
                 else:
-                    logger.warning(f"[bold red][+]Warning[+]{scisup}: Unknown Scientific Supervisors[/bold red]")
+                    logger.warning(f"[bold red]{scisup}: Unknown Scientific Supervisors[/bold red]")
                     ls_Scientific_Supervisors=None
         Technical_Supervisors_uri = {}
         for techsup in ls_Technical_Supervisors:
             if techsup is None:
-                logger.warning("[bold red][+]Warning[+][/bold red] [bold yellow]Technical Supervisors Missing from MIAPPE experiment sheet[/bold yellow]")
+                logger.warning(" [bold yellow]Technical Supervisors Missing from MIAPPE experiment sheet[/bold yellow]")
                 ls_Technical_Supervisors=None
             else:
                 Sec_Src = Sec_Api.search_persons(name=techsup)["result"]
                 if Sec_Src:
                     Technical_Supervisors_uri.update({techsup: Sec_Src[0].uri})
                     if status_callback:
-                        status_callback(f"[green]{techsup}[/green] URI: {Sec_Src[0].uri}")
+                        status_callback(f"[bold green][✓][/bold green] [green]{techsup}[/green] URI: {Sec_Src[0].uri}")
                     ls_Technical_Supervisors = list(Technical_Supervisors_uri.values())
                 else:
-                    logger.warning(f"[bold red][+]Warning[+] {techsup}: Unknown Technical Supervisors[/bold red]")
+                    logger.warning(f"[bold red] {techsup}: Unknown Technical Supervisors[/bold red]")
                     ls_Technical_Supervisors=None
         body = silex.ExperimentCreationDTO(
             name=NameExp,
@@ -170,14 +169,10 @@ def create_experiment(document_miappe, silex_API_Client,status_callback=None):
             technical_supervisors=ls_Technical_Supervisors,
             groups=ls_Groups,
             is_public=Is_Public)
-        Api_Resp = Exp_Api.create_experiment(body=body)
-
-        if status_callback:
-            status_callback(f"[bold green]Experiment Creation:[/bold green] {Api_Resp['metadata']['datafiles']}")
-
+            
+        Exp_Api.create_experiment(body=body)
+        logger.info(NameExp_uri)
         Exp_Src = Exp_Api.search_experiments(name=NameExp)
         NameExp_uri.update({NameExp: Exp_Src["result"][0].uri})
-        logger.info(f"[bold cyan]Your experiment {NameExp} has the following uri:[/bold cyan] {NameExp_uri[NameExp]}")
-        if status_callback:
-            status_callback(f"[bold cyan]Your experiment {NameExp} has the following uri:[/bold cyan] {NameExp_uri[NameExp]}")
+
     return NameExp_uri

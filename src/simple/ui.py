@@ -2,12 +2,11 @@ from simple.erreurs import SimpleBaseException
 import os
 from simple.__init__ import __version__
 from simple.systeme_logs import logger
-from rich.console import Console
+from simple.console import console
 from rich.panel import Panel
 from rich.prompt import Prompt, IntPrompt
 from rich.table import Table
 
-console = Console()
 
 BANNER = f"""[green]
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀

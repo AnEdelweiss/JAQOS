@@ -114,7 +114,7 @@ def create_germplasm(document_miappe, silex_API_Client):
 
     return germplasms_uri, species_uri
 
-def create_sci_obj(document_data,document_miappe,silex_API_Client):
+def create_sci_obj(document_data,document_miappe,silex_API_Client,status_callback=None):
     # Récupération du excel page experiment
     dataframe = pd.read_excel(document_miappe, sheet_name="experiment", header=1)
     dataframe.drop(dataframe.columns[dataframe.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
@@ -132,10 +132,11 @@ def create_sci_obj(document_data,document_miappe,silex_API_Client):
 
     # on cherche si l'expérience éxiste pour en extraire l'uri
     exp_search = silex.ExperimentsApi(silex_API_Client).search_experiments(name=name_exp)
-    if "result" not in exp_search:
+    resultats = exp_search.get("result", [])
+    if not resultats:
         logger.error(f"Experiment {name_exp} was not found, check if the name is correct or create the experiment before scientific objects")
         raise DataImportError(f"[bold red]This experiment doesn't exist, please check if the name is correct : {name_exp}[/bold red]")
-    name_exp_uri = {name_exp: exp_search["result"][0].uri}
+    name_exp_uri = {name_exp: resultats[0].uri}
     logger.info(name_exp_uri)
     # Récupérer un dictionnaire de facteurs levels pour cette experience
     api_response = silex.ExperimentsApi(silex_API_Client).get_available_factors(exp_search["result"][0].uri)
@@ -246,6 +247,9 @@ def create_sci_obj(document_data,document_miappe,silex_API_Client):
                 "Date Import": datetime.datetime.today().strftime('%Y-%m-%d %H:%M'),
             })
             created_sci_obj += 1
+            if status_callback:
+                if created_sci_obj % 50 == 0 or created_sci_obj == len(df_sci_obj):
+                    status_callback(f"[bold green][✓] {created_sci_obj} scientific objects created on {len(df_sci_obj)} total.[/bold green]")
     #écriture des metadata des objets scientifiques sur le excel 
     if dtos_to_export:
         dossier_parent = os.path.dirname(document_data)

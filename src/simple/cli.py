@@ -3,13 +3,14 @@ import opensilexClientToolsPython as silex
 from rich.prompt import Prompt, IntPrompt
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeElapsedColumn, TimeRemainingColumn
-from simple.ui import console, BANNER, MENU_CREATION, menu, choix_repertoire_travail,HELP_MENU,change_tabular_data,show_data_table_dictionnaire,show_data_panel
+from simple.ui import BANNER, MENU_CREATION, menu, choix_repertoire_travail,HELP_MENU,change_tabular_data,show_data_table_dictionnaire,show_data_panel
 from simple.auth import INSTANCES, get_login,connexion, is_connected,check_connection_internet
 from simple.experiment import create_experiment,api_find_experiment_by_name
 from simple.data_import import create_sci_obj,create_data,create_factor,create_germplasm,get_provenances,data_mapping
 from simple.datafile_import import execute_datafiles_upload,check_for_datafiles,get_round_protocol_info
 from simple.erreurs import NetworkError, SimpleBaseException,AuthenticationError,DataImportError
 from simple.systeme_logs import logger
+from simple.console import console
 
 def ui_find_experiment(silex_API_Client):
     name_exp = Prompt.ask("[cyan]What experiment are you looking for?[/cyan]")
@@ -28,18 +29,15 @@ def ui_find_experiment(silex_API_Client):
 
 def ui_create_experiment(document_miappe,silex_API_Client):
     console.print("[bold green]__________________________Experiment Importation__________________________[/bold green]")
-    console.print(f"[cyan]File : [/cyan] {document_miappe}")
-    
     def afficher_statut(mess):
-        console.print(f"[bold cyan][+][bold cyan][bold green]{mess}[/bold green]")
+        console.print(mess)
 
     try:
         with console.status("[bold green]Processing experiment data...[/bold green]"):
             results = create_experiment(document_miappe,silex_API_Client,status_callback=afficher_statut)
         # affichage final 
         for nom, uri in results.items():
-            console.print(f"[bold cyan]Your experiment {nom} has the following uri:[/bold cyan] {uri}")
-            
+            console.print(f"[bold green][✓][/bold green] [bold cyan]Your experiment {nom} has the following uri:[/bold cyan] {uri}")
     except DataImportError as e:
         #Gestion erreurs
         console.print(f"\n[bold red]Import Aborted:[/bold red] {e}")
@@ -60,7 +58,6 @@ def ui_import_factor(document_miappe, silex_API_Client):
 
 def ui_import_germplasm(document_miappe, silex_API_Client):
     console.print("[bold green]__________________________Germplasm Importation__________________________[bold green]")
-    console.print(f"[cyan]Miappe file :[/cyan] {document_miappe}")
     logger.info(f"Miappe file : {document_miappe}")
 
     with console.status("[green]Importing/searching for germplasms on Phis instance...[/green]", spinner="aesthetic"):
@@ -73,8 +70,12 @@ def ui_import_germplasm(document_miappe, silex_API_Client):
 
 def ui_import_sci_obj(document_data,document_miappe,silex_API_Client):
     console.print("[bold green]__________________________Scientific objects Importation__________________________[bold green]")
+    
+    def afficher_statut(mess):
+        console.print(f"[bold cyan][+] [bold cyan][bold green]{mess}[/bold green]")
+
     with console.status("[green]Importing/Searching Scientific objects on OpenSilex instance...[/green]", spinner="aesthetic"):
-        sci_obj_uri,created_sci_obj = create_sci_obj(document_data, document_miappe, silex_API_Client)
+        sci_obj_uri,created_sci_obj = create_sci_obj(document_data, document_miappe, silex_API_Client,status_callback=afficher_statut)
     found_sci_obj=len(sci_obj_uri)-created_sci_obj
 
     console.print(f"[bold green]End of search : {found_sci_obj} found,{created_sci_obj} created. [/bold green]")

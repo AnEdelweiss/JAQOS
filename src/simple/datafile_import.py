@@ -381,8 +381,8 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
             
         if len(mask_to_upload)>0:
             if status_callback:
-                status_callback(f"[green][✓] Datafile2 upload complete! : {len(mask_to_upload)} uploads! [/green]")
-                logger.info(f"[green][✓] Datafile2 upload complete! {len(mask_to_upload)} uploads![/green]")
+                status_callback(f"[green][✓] Datafile 2 upload complete! : {len(mask_to_upload)} uploads! [/green]")
+                logger.info(f"[green][✓] Datafile 2 upload complete! {len(mask_to_upload)} uploads![/green]")
         else:
             status_callback("[green][✓] All Datafiles 2 were already uploaded (or there was no datafiles1)[/green]")
             logger.info("[green][✓] All Datafiles 2 were already uploaded (or there was no datafiles1) [/green]")
