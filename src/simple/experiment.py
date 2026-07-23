@@ -25,7 +25,7 @@ def create_experiment(document_miappe, silex_API_Client,status_callback=None):
         NameExp_uri = {} 
         #Fonction pour split, strip et retourner un truc vide si la case est vide
         def to_list(key):
-            val = row_dict[key]
+            val = row_dict.get(key)
             return [x.strip() for x in str(val).split(",")] if val is not None else []
         # get the names of everythng for the experiment
         NameExp = row_dict.get('name')
@@ -180,4 +180,4 @@ def create_experiment(document_miappe, silex_API_Client,status_callback=None):
         logger.info(f"[bold cyan]Your experiment {NameExp} has the following uri:[/bold cyan] {NameExp_uri[NameExp]}")
         if status_callback:
             status_callback(f"[bold cyan]Your experiment {NameExp} has the following uri:[/bold cyan] {NameExp_uri[NameExp]}")
-        return NameExp_uri
+    return NameExp_uri
