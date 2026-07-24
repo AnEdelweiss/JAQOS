@@ -219,6 +219,7 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
     #     if (sci_obj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_datafile1_keys
     # ]
     # # ###TEST
+
     if status_callback:
         status_callback(f"[bold green]{len(corr_data) - len(corr_to_upload)}[cyan] Datafiles1 exists on [bold green]{len(corr_data)}[/bold green] total [/cyan]")
     logger.info(f"[bold green]{len(corr_data) - len(corr_to_upload)}[cyan] Datafiles1 exists on [bold green]{len(corr_data)}[/bold green] total [/cyan]")
@@ -334,7 +335,7 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
         #     img for img in datafile2_test_subset 
         #     if (sci_obj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_datafile2_keys
         # ]
-        # # # # TEST TEST TEST
+        #  # # TEST TEST TEST
 
         status_callback(f"[bold green]{len(mask_data) - len(mask_to_upload)} [cyan]Datafiles2 exists on[/cyan] {len(mask_data)}[cyan] total[/bold green]")
         logger.info(f"[bold green]{len(mask_data) - len(mask_to_upload)} [cyan]Datafiles2 exists on[/cyan] {len(mask_data)}[cyan] total[/bold green]")

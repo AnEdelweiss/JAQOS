@@ -3,7 +3,7 @@ import opensilexClientToolsPython as silex
 from rich.prompt import Prompt, IntPrompt
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeElapsedColumn, TimeRemainingColumn
-from simple.ui import BANNER, MENU_CREATION, menu, choix_repertoire_travail,HELP_MENU,change_tabular_data,show_data_table_dictionnaire,show_data_panel
+from simple.ui import BANNER, MENU_CREATION, menu, choix_repertoire_travail,HELP_MENU,change_tabular_data,show_data_table_dictionnaire,show_data_panel,choix_dossier_datafile
 from simple.auth import INSTANCES, get_login,connexion, is_connected,check_connection_internet
 from simple.experiment import create_experiment,api_find_experiment_by_name
 from simple.data_import import create_sci_obj,create_data,create_factor,create_germplasm,get_provenances,data_mapping
@@ -138,8 +138,10 @@ def ui_import_data(document_data, document_miappe,login,silex_API_Client):
 
     console.print("[bold green]Data Import Over![/bold green]")
 
-def ui_import_datafiles(document_miappe, document_data, wd_experience, repertoire_photos, login, silex_API_Client):
+def ui_import_datafiles(document_miappe, document_data, wd_experience, login, silex_API_Client):
     console.print("[bold green]__________________________Datafiles Importation__________________________[bold green]")
+    #on choisit le dossier photo ici
+    repertoire_photos,_ = choix_dossier_datafile(wd_experience)
     #taking care of provenances
     with console.status("[green]Checking provenances...[/green]", spinner="aesthetic"):
         prov_dict, datafile_provenance, missing_provs = get_provenances(document_data, document_miappe, silex_API_Client)
@@ -296,12 +298,12 @@ def main():
                     if choix_dossier:
                         changement_repertoire = Prompt.ask(f"Would you like to continue to work on this experiment ? [bold]{choix_dossier}[/bold] ?", choices=["y", "n"], default="y")
                         if changement_repertoire == 'n':
-                            wd_experience, choix_dossier, document_miappe,document_data,repertoire_photos = choix_repertoire_travail()
+                            wd_experience, choix_dossier, document_miappe,document_data = choix_repertoire_travail()
                     else:
                         console.print("[cyan]You chose to import data on OpenSilex[/cyan]")
                         result = choix_repertoire_travail()
                         if result[0] is not None:
-                            wd_experience, choix_dossier, document_miappe,document_data,repertoire_photos = result
+                            wd_experience, choix_dossier, document_miappe,document_data = result
                         else:
                             break
                     if not wd_experience:
@@ -309,7 +311,7 @@ def main():
                     while True:
                         if choix_dossier is None:
                             console.print("[cyan]You chose to import data on OpenSilex[/cyan]")
-                            wd_experience, choix_dossier, document_miappe,document_data,repertoire_photos = choix_repertoire_travail()
+                            wd_experience, choix_dossier, document_miappe,document_data = choix_repertoire_travail()
                         #Gestion du repertoire de travail
                         console.print(Panel(MENU_CREATION, title="[bold]Experiment Menu[/bold]", border_style="green"))
                         choix_creation = IntPrompt.ask("[green]Please make your choice[/green]")
@@ -327,7 +329,7 @@ def main():
                             ui_import_sci_obj(document_data,document_miappe,silex_API_Client)
 
                         elif choix_creation == 5:
-                            ui_import_datafiles(document_miappe, document_data, wd_experience, repertoire_photos, login, silex_API_Client)
+                            ui_import_datafiles(document_miappe, document_data, wd_experience, login, silex_API_Client)
                             
                         elif choix_creation == 6:
                             ui_import_data(document_data, document_miappe,login,silex_API_Client)
@@ -337,7 +339,7 @@ def main():
                             ui_import_germplasm(document_miappe, silex_API_Client)
                             ui_import_factor(document_miappe, silex_API_Client)
                             ui_import_sci_obj(document_data,document_miappe,silex_API_Client)
-                            ui_import_datafiles(document_miappe, document_data, wd_experience, repertoire_photos, login, silex_API_Client)
+                            ui_import_datafiles(document_miappe, document_data, wd_experience, login, silex_API_Client)
                             ui_import_data(document_data, document_miappe,login,silex_API_Client)
                             break
                         

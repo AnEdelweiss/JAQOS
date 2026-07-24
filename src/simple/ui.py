@@ -153,19 +153,30 @@ def choix_repertoire_travail():
                     choix_data = listedfiles[choix_temp]
                     console.print(f"[cyan]Your tabular data file is :[/cyan] [bold green]{choix_data}[/bold green]")
                     document_data = os.path.join(wd_experience, choix_data)
-                    break
-            console.print(table_fichiers)
+                    return wd_experience,choix_dossier,document_miappe,document_data
+        else:
+            console.print("[bold red]Incorrect selection... :([/bold red]")
 
-            while True:
-                choix_temp = IntPrompt.ask(f"[green]Please chose the folder containing the pictures you want to upload (0-{nombre_fichiers-1})[/green]")
-                if 0 <= choix_temp < nombre_fichiers:
-                    choix_data = listedfiles[choix_temp]
-                    console.print(f"[cyan]The folder is :[/cyan] [bold green]{choix_data}[/bold green]")
-                    repertoire_photos = os.path.join(wd_experience, choix_data)
+def choix_dossier_datafile(wd_experience):
 
-                    return wd_experience,choix_dossier,document_miappe,document_data,repertoire_photos
-                else:
-                    console.print("[bold red]Incorrect selection... :([/bold red]")
+    listedfiles = os.listdir(wd_experience)
+    nombre_fichiers = len(listedfiles)
+    
+    table_fichiers = Table(title="Files found !", header_style="bold magenta")
+    table_fichiers.add_column("Index", style="cyan")
+    table_fichiers.add_column("Nom", style="yellow")
+    for index, nom in enumerate(listedfiles):
+        table_fichiers.add_row(str(index), nom)
+    console.print(table_fichiers)
+
+    while True:
+        choix_temp = IntPrompt.ask(f"[green]Please chose the folder containing the pictures you want to upload (0-{nombre_fichiers-1})[/green]")
+        if 0 <= choix_temp < nombre_fichiers:
+            choix_data = listedfiles[choix_temp]
+            console.print(f"[cyan]The folder is :[/cyan] [bold green]{choix_data}[/bold green]")
+            repertoire_photos = os.path.join(wd_experience, choix_data)
+
+            return wd_experience,repertoire_photos
         else:
             console.print("[bold red]Incorrect selection... :([/bold red]")
 
