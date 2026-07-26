@@ -1,14 +1,14 @@
 import os
 import json
-from lxml import etree as ET
 import pandas as pd
 import opensilexClientToolsPython as silex
+import datetime
+import concurrent.futures
 from simple.auth import connexion
 from simple.__init__ import __version__
 from simple.systeme_logs import logger
 from simple.erreurs import SimpleBaseException,DataImportError
-import datetime
-import concurrent.futures
+from lxml import etree as ET
     
 def get_round_protocol_info(wd_experience,document_data):
     #Get RoundProtocol Infos 
@@ -69,7 +69,7 @@ def parse_excel_for_metadata(df_data, dict_paths, prov, file_type):
         exp_id = row['Experiment ID']
         tray_id = row['Plant ID']
         pid = row.get("PID",None)
-        
+
         if file_type == "datafile1":
             filename = row.get("Datafile1_Filename")
         else:
@@ -100,7 +100,7 @@ def parse_excel_for_metadata(df_data, dict_paths, prov, file_type):
         if 'Round Order' in row:
             metadata["Round Order"] = int(row['Round Order'])
         metadata_dict[filename] = metadata
-        
+
     return metadata_dict
 
 def get_existing_datafiles(dat_api, prov_uri, exp_uri):
@@ -110,7 +110,7 @@ def get_existing_datafiles(dat_api, prov_uri, exp_uri):
     dat_src = dat_api.get_data_file_descriptions_by_search(
         provenances=[prov_uri], experiments=[exp_uri], page_size=100000
     )["result"]
-    
+
     return {
         (elts.target, elts._date, elts.provenance.settings.get("Camera Angle"), elts.metadata.get('Round Order'))
         for elts in dat_src

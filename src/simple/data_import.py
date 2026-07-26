@@ -247,9 +247,9 @@ def create_sci_obj(document_data,document_miappe,silex_API_Client,status_callbac
                 "Date Import": datetime.datetime.today().strftime('%Y-%m-%d %H:%M'),
             })
             created_sci_obj += 1
-            if status_callback:
-                if created_sci_obj % 50 == 0 or created_sci_obj == len(df_sci_obj):
-                    status_callback(f"[bold green][✓] {created_sci_obj} scientific objects created on {len(df_sci_obj)} total.[/bold green]")
+            
+            if status_callback and (created_sci_obj % 50 == 0 or created_sci_obj == len(df_sci_obj)):
+                status_callback(f"[bold green][✓] {created_sci_obj} scientific objects created on {len(df_sci_obj)} total.[/bold green]")
     #écriture des metadata des objets scientifiques sur le excel 
     if dtos_to_export:
         dossier_parent = os.path.dirname(document_data)
