@@ -307,9 +307,9 @@ def get_provenances(document_data,document_miappe,silex_API_Client,create_defaul
                             prov_activity=[]
                         )
 
-                    data_api.create_provenance(body=body)
-                    prov_src = data_api.search_provenance(name=prov_name)["result"]
-                    prov_dict[prov_name] = prov_src[0].uri
+                        data_api.create_provenance(body=body)
+                        prov_src = data_api.search_provenance(name=prov_name)["result"]
+                        prov_dict[prov_name] = prov_src[0].uri
 
     return prov_dict,datafile_provenance,missing_prov
 

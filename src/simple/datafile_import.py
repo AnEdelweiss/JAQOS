@@ -67,7 +67,6 @@ def parse_excel_for_metadata(df_data, dict_paths, prov, file_type):
     metadata_dict = {}
     for row in list(df_data.to_dict('records')):
         exp_id = row['Experiment ID']
-        round_order = row['Round Order']
         tray_id = row['Plant ID']
         pid = row.get("PID",None)
         
@@ -89,7 +88,6 @@ def parse_excel_for_metadata(df_data, dict_paths, prov, file_type):
         metadata = {
             "Path": dict_paths[filename],
             "Experiment ID": exp_id,
-            "Round Order": round_order,
             "Date": date,
             "Plant ID": tray_id,
             "PID": pid,
@@ -99,6 +97,8 @@ def parse_excel_for_metadata(df_data, dict_paths, prov, file_type):
 
         if 'Angle' in row:
             metadata["Angle"] = row['Angle']
+        if 'Round Order' in row:
+            metadata["Round Order"] = int(row['Round Order'])
         metadata_dict[filename] = metadata
         
     return metadata_dict
@@ -133,7 +133,7 @@ def check_for_datafiles(document_data, repertoire_photos):
         missing_datafile1 = set_ls_datafile1 - set(dict_datafile1.keys())
     else:
         logger.error("User tried to import datafiles without 'datafile1_Filename column")
-        raise DataImportError("You are importing datafiles, you have to specify the name of the file for each row in a column named 'Datafile1_Filename'\n Leaving client.[/bold red]")
+        raise DataImportError("You are importing datafiles, you have to specify the name of the file for each row in a column named 'Datafile1_Filename'.")
     #traitement des datafiles2
     has_datafile2 = 'Datafile2_Filename' in df_data.columns
     dict_datafile2 = {}
@@ -205,7 +205,7 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
     
     corr_to_upload = [
         img for img in corr_data.values() 
-        if (sci_obj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_datafile1_keys
+        if (sci_obj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), img.get("Round Order")) not in existing_datafile1_keys
     ]
 
     # # ####TEST :
@@ -216,7 +216,7 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
 
     # corr_to_upload = [
     #     img for img in datafile1_test_subset 
-    #     if (sci_obj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_datafile1_keys
+    #     if (sci_obj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), img.get("Round Order")) not in existing_datafile1_keys
     # ]
     # # ###TEST
 
@@ -228,7 +228,7 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
     
     def process_datafile1(img):
         path_ou_post = 0
-        round_order = int(img.get("Round Order"))
+        round_order = img.get("Round Order")
         cam_pos_round = cam_pos.get(round_order, {}) 
         settings_dict = {}
         if img.get("Angle") is not None:
@@ -323,7 +323,7 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
 
         mask_to_upload = [
             img for img in mask_data.values()
-            if (sci_obj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_datafile2_keys
+            if (sci_obj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), img.get("Round Order")) not in existing_datafile2_keys
         ]
 
         # # # TEST TEST TEST
@@ -333,14 +333,14 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
 
         # mask_to_upload = [
         #     img for img in datafile2_test_subset 
-        #     if (sci_obj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), int(img["Round Order"])) not in existing_datafile2_keys
+        #     if (sci_obj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), img.get("Round Order")) not in existing_datafile2_keys
         # ]
         #  # # TEST TEST TEST
 
         status_callback(f"[bold green]{len(mask_data) - len(mask_to_upload)} [cyan]Datafiles2 exists on[/cyan] {len(mask_data)}[cyan] total[/bold green]")
         logger.info(f"[bold green]{len(mask_data) - len(mask_to_upload)} [cyan]Datafiles2 exists on[/cyan] {len(mask_data)}[cyan] total[/bold green]")
         def process_datafile2(img):
-            round_order = int(img.get("Round Order"))
+            round_order = img.get("Round Order")
             settings = {"Camera Angle": img.get("Angle")}
             if round_order in plant_mask:
                 settings.update(plant_mask[round_order])

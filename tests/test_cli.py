@@ -56,7 +56,7 @@ class TestCLI:
         mock_is_connected.return_value = True
         
         # Le scénario : L'utilisateur tape '2' (recherche), ça plante, puis il tape '9' (quitter)
-        mock_int_prompt.side_effect = [2, 9]
+        mock_int_prompt.side_effect = [2, 9, KeyboardInterrupt()]
         
         # On simule une erreur métier (ex: annulation ou donnée introuvable)
         mock_ui_find.side_effect = SimpleBaseException("L'expérience est introuvable.")
@@ -83,14 +83,14 @@ class TestCLI:
         mock_is_connected.return_value = True
         
         # On simule un faux retour pour le choix du répertoire
-        mock_choix_rep.return_value = ("wd_path", "dossier_test", "miappe.xlsx", "data.csv", "photos/")
+        mock_choix_rep.return_value = ("wd_path", "dossier_test", "miappe.xlsx", "data.csv")
         
         # Scénario clavier : 
         # 1. Choix 3 (Menu importation)
         # 2. Choix 1 (Créer expérience)
         # 3. Choix 9 (Quitter le sous-menu)
         # 4. Choix 9 (Quitter l'application)
-        mock_int_prompt.side_effect = [3, 1, 9, 9]
+        mock_int_prompt.side_effect = [3, 1, 9, 9, KeyboardInterrupt()]
         
         with pytest.raises(SystemExit):
             main()
