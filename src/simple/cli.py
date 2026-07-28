@@ -260,9 +260,9 @@ def main():
     wd_experience = None
     #setting default login, here guest on sandbox
     login={
-        "identifier":"matteo.giboin@helsinki.fi",
-        "password":'!==!"=="',
-        "host":"https://phis.emphasis.fedcloud.eu/uh/rest"
+        "identifier":"guest@opensilex.org",
+        "password":"guest",
+        "host":"https://opensilex.org/"
         }
     silex_API_Client = silex.ApiClient(verbose=False)
     # CONNECTING AS GUEST ON THE SANDBOX BY DEFAULT ~

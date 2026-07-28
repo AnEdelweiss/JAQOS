@@ -64,7 +64,7 @@ def get_round_protocol_info(wd_experience,document_data):
     return cam_pos, plant_mask, True
 
 def parse_excel_for_metadata(df_data, dict_paths, prov, file_type, timezone_exp='UTC'):
-    
+
     metadata_dict = {}
     desired_format = "%Y-%m-%dT%H:%M:%S%z"
     
@@ -111,14 +111,17 @@ def get_existing_datafiles(dat_api, prov_uri, exp_uri):
     if not prov_uri:
         return set()
     # On prends le set de tuples (target, date, angle, round_order) existants
-    dat_src = dat_api.get_data_file_descriptions_by_search(
-        provenances=[prov_uri], experiments=[exp_uri], page_size=100000
-    )["result"]
-
+    dat_src = dat_api.get_data_file_descriptions_by_search(provenances=[prov_uri], experiments=[exp_uri], page_size=100000)["result"]
+    #je convertit en string les camera angle et les round order pour eviter les erreurs lors de la recuperation des metadata après
     return {
-        (elts.target, elts._date, elts.provenance.settings.get("Camera Angle"), elts.metadata.get('Round Order'))
-        for elts in dat_src
-    }
+            (
+                elts.target, 
+                elts._date,
+                str(elts.provenance.settings.get("Camera Angle")) if elts.provenance.settings and elts.provenance.settings.get("Camera Angle") is not None else None, 
+                str(elts.metadata.get('Round Order')) if elts.metadata and elts.metadata.get('Round Order') is not None else None
+            )
+            for elts in dat_src
+        }
 
 def check_for_datafiles(document_data, repertoire_photos):
         #Liste des datafiles
@@ -155,6 +158,7 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
     dataframe = pd.read_excel(document_miappe, sheet_name="experiment", header=1)
     dataframe.drop(dataframe.columns[dataframe.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
     name_exp = dataframe['name'].dropna().iloc[0]
+    timezone_exp = dataframe['experiment_timezone'].dropna().iloc[0] if 'experiment_timezone' in dataframe.columns else 'UTC'
     exp_search = silex.ExperimentsApi(silex_API_Client).search_experiments(name=name_exp)["result"]
     exp_uri = exp_search[0].uri
     logger.info(f'exp name : {name_exp}  exp uri : {exp_uri}')
@@ -198,7 +202,7 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
         logger.info(f"[green][✓] Provenance for datafile2 found : {provenance_datafile2}[/green]")
 
     # IMPORT DATAFILE 1
-    corr_data = parse_excel_for_metadata(df_data, dict_datafile1, provenance_datafile1, "datafile1")
+    corr_data = parse_excel_for_metadata(df_data, dict_datafile1, provenance_datafile1, "datafile1",timezone_exp)
     if status_callback:
         status_callback("[green][✓] datafile1 data parsing OK [/green]")
     logger.info("[green][✓] datafile1 data parsing OK [/green]")
@@ -207,9 +211,15 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
         status_callback("[green][✓] Search for existing datafiles1 OK [/green]")
     logger.info("[green][✓] Search for existing datafiles1 OK [/green]")
     
+    #Meme conversion que précédemment ça devrait fonctionner du coup
     corr_to_upload = [
         img for img in corr_data.values() 
-        if (sci_obj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), img.get("Round Order")) not in existing_datafile1_keys
+        if (
+            sci_obj_uri[img["Plant ID"]], 
+            img["Date"][:-5] + ".000" + img["Date"][-5:], 
+            str(img.get("Angle")) if pd.notna(img.get("Angle")) else None, 
+            str(img.get("Round Order")) if pd.notna(img.get("Round Order")) else None
+        ) not in existing_datafile1_keys
     ]
 
     # # ####TEST :
@@ -219,8 +229,13 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
     # datafile1_test_subset = toutes_datafile1_triees[1210:1215]
 
     # corr_to_upload = [
-    #     img for img in datafile1_test_subset 
-    #     if (sci_obj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), img.get("Round Order")) not in existing_datafile1_keys
+    #     img for img in corr_data.values() 
+    #     if (
+    #         sci_obj_uri[img["Plant ID"]], 
+    #         img["Date"][:-5] + ".000" + img["Date"][-5:], 
+    #         str(img.get("Angle")) if pd.notna(img.get("Angle")) else None, 
+    #         str(img.get("Round Order")) if pd.notna(img.get("Round Order")) else None
+    #     ) not in existing_datafile1_keys
     # ]
     # # ###TEST
 
@@ -309,7 +324,7 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
             )["result"]
         }
 
-        mask_data = parse_excel_for_metadata(df_data, dict_datafile2, provenance_datafile2, "datafile2")
+        mask_data = parse_excel_for_metadata(df_data, dict_datafile2, provenance_datafile2, "datafile2",timezone_exp)
         if status_callback:
             status_callback("[green][✓] datafile2 data parsing OK [/green]")
         logger.info("[green][✓] datafile2 data parsing OK [/green]")
@@ -327,7 +342,12 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
 
         mask_to_upload = [
             img for img in mask_data.values()
-            if (sci_obj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), img.get("Round Order")) not in existing_datafile2_keys
+            if (
+                sci_obj_uri[img["Plant ID"]], 
+                img["Date"][:-5] + ".000" + img["Date"][-5:], 
+                str(img.get("Angle")) if pd.notna(img.get("Angle")) else None, 
+                str(img.get("Round Order")) if pd.notna(img.get("Round Order")) else None
+            ) not in existing_datafile2_keys
         ]
 
         # # # TEST TEST TEST
@@ -336,8 +356,13 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
         # datafile2_test_subset = toutes_datafile2_triees[1210:1215]
 
         # mask_to_upload = [
-        #     img for img in datafile2_test_subset 
-        #     if (sci_obj_uri[img["Plant ID"]], img["Date"].replace('+', '.000+'), img.get("Angle"), img.get("Round Order")) not in existing_datafile2_keys
+        #     img for img in mask_data.values()
+        #     if (
+        #         sci_obj_uri[img["Plant ID"]], 
+        #         img["Date"][:-5] + ".000" + img["Date"][-5:], 
+        #         str(img.get("Angle")) if pd.notna(img.get("Angle")) else None, 
+        #         str(img.get("Round Order")) if pd.notna(img.get("Round Order")) else None
+        #     ) not in existing_datafile2_keys
         # ]
         #  # # TEST TEST TEST
 
