@@ -31,8 +31,8 @@ BANNER = f"""[green]
   [yellow]\\[+] You will be logged as a guest by default, you can log in to change user.[/yellow]
   [green]\\[+] Please read the README.md file available on the github for guidance.
   
-  [white]VERSION-SIMPLE[/white]    = [bold green]{__version__} Ready for first user tests![/bold green]
-  [white]VERSION-OpenSilex[/white] = [bold green]1.5.1-HOTFIX[/bold green]
+  [white]VERSION-SIMPLE[/white]    = [bold green]{__version__} now with timezones and better factor fetching :3 ![/bold green]
+  [white]VERSION-OpenSilex[/white] = [bold green]1.5.2[/bold green]
   [white]VERSION-MIAPPE[/white]    = [bold green]1.2[/bold green]
   [white]Made By[/white]           = [bold green]•┈••✦ Edelweiss ✦••┈•[/bold green]
 """
