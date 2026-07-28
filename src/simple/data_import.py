@@ -356,7 +356,10 @@ def create_data(document_data, document_miappe, login, silex_API_Client, morpho_
             break
     
     #FORMATAGE DONNÉES
-    timezone_exp = dataframe['experiment_timezone'].dropna().iloc[0] if 'experiment_timezone' in dataframe.columns else 'UTC'
+    if 'experiment_timezone' in dataframe.columns and not dataframe['experiment_timezone'].dropna().empty:
+        timezone_exp = dataframe['experiment_timezone'].dropna().iloc[0]
+    else:
+        timezone_exp = 'UTC'
     desired_format = "%Y-%m-%dT%H:%M:%S%z"
     df_data = pd.read_excel(document_data)
     

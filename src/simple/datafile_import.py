@@ -158,10 +158,15 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
     dataframe = pd.read_excel(document_miappe, sheet_name="experiment", header=1)
     dataframe.drop(dataframe.columns[dataframe.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
     name_exp = dataframe['name'].dropna().iloc[0]
-    timezone_exp = dataframe['experiment_timezone'].dropna().iloc[0] if 'experiment_timezone' in dataframe.columns else 'UTC'
     exp_search = silex.ExperimentsApi(silex_API_Client).search_experiments(name=name_exp)["result"]
     exp_uri = exp_search[0].uri
     logger.info(f'exp name : {name_exp}  exp uri : {exp_uri}')
+    #Setting timezone
+    if 'experiment_timezone' in dataframe.columns and not dataframe['experiment_timezone'].dropna().empty:
+        timezone_exp = dataframe['experiment_timezone'].dropna().iloc[0]
+    else:
+        timezone_exp = 'UTC'
+    logger.info(f"timezone : {timezone_exp}")
     #GETTING PID and angle
     if 'PID' in df_data.columns:
         pid = df_data['PID'].unique()[0]

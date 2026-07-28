@@ -262,7 +262,7 @@ def main():
     login={
         "identifier":"guest@opensilex.org",
         "password":"guest",
-        "host":"https://opensilex.org/"
+        "host":"https://opensilex.org/sandbox/rest"
         }
     silex_API_Client = silex.ApiClient(verbose=False)
     # CONNECTING AS GUEST ON THE SANDBOX BY DEFAULT ~
