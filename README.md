@@ -12,33 +12,28 @@ or here : [asciinema link](https://asciinema.org/a/wbQdA2NXiHwN86DZ)
 
 ## Description.
 
-In the context of my internship, I am working on SIMPLE, a Command Line Interface coded in python with a focus on ease of use, rapidity and flexibility. This tool will ( I hope ) help researchers uppload MIAPPE compliant phenotyping data on OpenSilex instances without any efforts. Allowing them to keep germplasm banks up to date, to create experiments, create or add scientific objects to an experiment, add pictures, DATA and more.
+In the context of my internship, I am working on SIMPLE, a Command Line Interface coded in python with a focus on ease of use, rapidity and flexibility. This tool will ( I hope ) help researchers upload MIAPPE compliant phenotyping data on OpenSilex instances without any efforts. Allowing them to keep germplasm banks up to date, to create experiments, create or add scientific objects to an experiment, add pictures, DATA and more.
 
 ## Before the first run :
 
-As of now, the file structure for using the script properly is the following :
-
+As of now, the file structure should follow the example below  :
 ```
 exp_database/
 │
 ├── experiment_1/
 │   ├── tabular_data_file_RGB1.xlsx
-│	├──	tabular_data_file_RGB2.xlsx
+│	  ├──	tabular_data_file_archives.xlsx
 │   ├── Miappe_template.xlsx
-│   ├── 00-RoundProtocol/
-│   │   └── Round_protocol_files.txt
+│   ├── 00-RoundProtocol/ (optional)
+│   │   └── Round_protocol_files.txt 
 │   ├── output/
 │   │   └── miappe_template_filled.xlsx
-│   ├── RGB2/
-│   │   ├── FEC/
-│   │   │   └── FEC_images.png
-│   │   └── FEM/
-│   │       └── FEM_images.png
-│   └── RGB1/
-│       ├── FEC/
-│       │   └── FEC_images.png
-│       └── FEM/
-│           └── FEM_images.png
+│   ├── Archives/ (optional)
+│   │   └── archive1.tar
+│   │   └── archive2.tar
+│   └── RGB1/ (optional)
+│       └── image1.png
+│       └── image2.png
 ├── experiment_2/
 ├── experiment_3/
 └── experiment_.../
@@ -51,9 +46,9 @@ and download the latest one for your distribution (Linux/Windows), then just dou
 
 ## The input miappe file
 
-as this is a work in progress, works with the current MIAPPE table provided in /exp_database/test_SIMPLE/Miappe_Template.xlsx
+as this is a work in progress, works with the current MIAPPE table provided in Miappe_Template.xlsx
 
-You can cange the order of the sheets, but you should NOT rename sheet names, this is what the script is using to read read data from.
+You can change the order of the sheets, but you should NOT rename sheet names, this is what the script is using to read read data from.
 Likewise, do NOT  rename the 2nd row  of each sheet nor delete it.
 
 ## The output miappe file
@@ -81,8 +76,11 @@ Everything should work !
 ## Project roadmap :
 
 - Creating a 'troubleshooting/Q&A' section and a more thorough tutorial/doc :)
-- ~~Updating the blank miappe available in the github~~
 - Make a logo for the program :p
+- Automation(?)
+- Change factor/factor level fetching and measuring date/measuring time from tabular data. 
+- Generalization : ~~changing the hardcoded provenances and PID~~, create the output document properly (and the output folder in the experiment directory etc...)
+- ~~Updating the blank miappe available in the github~~
 - ~~refactoring :-(~~
 - ~~Using the rich library.~~
 - ~~English translation.~~
@@ -90,7 +88,5 @@ Everything should work !
 - ~~Make a 'help' feature in the CLI~~
 - ~~Data upploading.~~
 - ~~Reading the image names from the tabular data file and comparing them to those found locally. Thus limiting the parsing data from filename and using directly the tabular data.~~
-- Generalization : ~~changing the hardcoded provenances and PID~~, create the output document and the output folder in the experiment directory etc...)
 - ~~Generalization : no more 'fec' and 'fem' when importing images, 'do you want to import 1 or 2 sets of datafiles (one obtained from the first one)' ability to import more than just images (tar files, fluorescence data...)~~
-- Automatization(?)
 - ~~Logging everything into a log-dd-mm-yyyy.log to keep a written trace of what has been done during the session.~~
