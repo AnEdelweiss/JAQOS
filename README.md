@@ -17,6 +17,7 @@ In the context of my internship, I am working on SIMPLE, a Command Line Interfac
 ## Before the first run :
 
 As of now, the file structure should follow the example below  :
+
 ```
 exp_database/
 │
@@ -78,7 +79,7 @@ Everything should work !
 - Creating a 'troubleshooting/Q&A' section and a more thorough tutorial/doc :)
 - Make a logo for the program :p
 - Automation(?)
-- Change factor/factor level fetching and measuring date/measuring time from tabular data. 
+- ~~Change factor/factor level fetching and measuring date/measuring time from tabular data.~~
 - Generalization : ~~changing the hardcoded provenances and PID~~, create the output document properly (and the output folder in the experiment directory etc...)
 - ~~Updating the blank miappe available in the github~~
 - ~~refactoring :-(~~
