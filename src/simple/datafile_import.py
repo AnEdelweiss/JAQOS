@@ -63,8 +63,15 @@ def get_round_protocol_info(wd_experience,document_data):
         return cam_pos, plant_mask, False
     return cam_pos, plant_mask, True
 
-def parse_excel_for_metadata(df_data, dict_paths, prov, file_type):
+def parse_excel_for_metadata(df_data, dict_paths, prov, file_type, timezone_exp='UTC'):
+    
     metadata_dict = {}
+    desired_format = "%Y-%m-%dT%H:%M:%S%z"
+    
+    # Process the single timestamp column using the provided timezone
+    df_data['Measuring Time'] = pd.to_datetime(df_data['timestamp'], format="%Y-%m-%d %H:%M:%S")
+    df_data['Measuring Time'] = df_data['Measuring Time'].dt.tz_localize('UTC').dt.tz_convert(timezone_exp).dt.strftime(desired_format)
+
     for row in list(df_data.to_dict('records')):
         exp_id = row['Experiment ID']
         tray_id = row['Plant ID']
@@ -80,9 +87,6 @@ def parse_excel_for_metadata(df_data, dict_paths, prov, file_type):
             raise SimpleBaseException(f"warning : {filename} in 'data files' sheet of the  MIAPPE file is either empty or maybe there is a typo etc...")
             continue
 
-        desired_format = "%Y-%m-%dT%H:%M:%S%z"
-        row['Measuring Date'] = row['Measuring Date'].date()
-        row['Measuring Time'] = row['Measuring Time'].tz_localize('UTC').tz_convert('Europe/Helsinki').strftime(desired_format)
         date = row['Measuring Time']
 
         metadata = {

@@ -123,7 +123,12 @@ def create_sci_obj(document_data,document_miappe,silex_API_Client,status_callbac
     end_exp = dataframe['end_date'].dropna().iloc[0] if 'end_date' in dataframe.columns and not pd.isna(dataframe['end_date'].dropna().iloc[0]) else None
     bio_mat_type = dataframe['scientific_object_type'].dropna().iloc[0]
     bio_mat_type = list(map(str.strip, bio_mat_type.split(",")))
-    
+
+    df_factors = pd.read_excel(document_miappe, sheet_name="factors", header=1)
+    df_factors.drop(df_factors.columns[df_factors.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
+    # Extract unique factor names as a list
+    factors = df_factors['name'].dropna().astype(str).str.strip().unique().tolist()
+
     # Ici on récupère les données tabulaires pour créer les objets scientifiques.
     df_data = pd.read_excel(document_data)
     # on garde seulement les Plant ID uniques
@@ -210,23 +215,25 @@ def create_sci_obj(document_data,document_miappe,silex_API_Client,status_callbac
                     relation_temp = silex.RDFObjectRelationDTO(_property="vocabulary:hasGermplasm", value=germplasm_value)
                     relations_sci_obj.append(relation_temp)
             #on récupère les uri des niveaux de facteur
-            
-            if factors_levels_uri and row["Factor Level"]:
-                for factor_level in row["Factor Level"].split(","):
-                    factor_level = factor_level.strip()
-                    if factor_level not in factors_levels_uri:
-                        logger.warning("The factor level was not found. Starting factor import from the MIAPPE document")
-                        factors_levels_uri, factors_uri = create_factor(document_miappe, silex_API_Client)
-                        
+            for one_factor in factors:
+                if one_factor in row and pd.notna(row[one_factor]):
+                    factor_level = str(row[one_factor]).strip()
+                    if factor_level and factors_levels_uri is not None:
                         if factor_level not in factors_levels_uri:
-                            logger.error(f"This factor level : {factor_level} cannot be found.")
-                            raise DataImportError(f"[bold red] This factor level : [cyan]{factor_level}[/cyan] cannot be found, please check for typos or if they really exist.[/bold red]")
-                    else:
+                            logger.warning("The factor level was not found. Starting factor import from the MIAPPE document")
+                            factors_levels_uri, factors_uri = create_factor(document_miappe, silex_API_Client)
+                            
+                            if factor_level not in factors_levels_uri:
+                                logger.error(f"This factor level : {factor_level} cannot be found.")
+                                raise DataImportError(f"[bold red] This factor level : [cyan]{factor_level}[/cyan] cannot be found, please check for typos or if they really exist.[/bold red]")
+
                         factor_level_value = factors_levels_uri.get(factor_level)
                         all_factors.append(factor_level_value)
                         relation_temp = silex.RDFObjectRelationDTO(_property="vocabulary:hasFactorLevel", value=factor_level_value)
                         relations_sci_obj.append(relation_temp)
-
+                else :
+                    logger.error(f"No column with the name : {one_factor} can be found in your tabular data file.")
+                    raise DataImportError(f"[bold red] This factor cannot be found in the tabular data file : [cyan]{one_factor}[/cyan]\nPlease check for typos in your tabular data or if the column really has the name you declared in the 'factor' sheet of the MIAPPE file.[/bold red]")
             #on concatène les infos générales et les uri des germplasmes/facteurs puis on envoie le body et on le stock dans un dictionnaire
             relations = relations_generales + relations_sci_obj
             body = silex.ScientificObjectCreationDTO(name=row["Plant ID"], rdf_type=rdf_type, relations=relations, experiment=name_exp_uri[name_exp])
@@ -347,17 +354,21 @@ def create_data(document_data, document_miappe, login, silex_API_Client, morpho_
             rdf2 = config.get("rdf_type_datafile2")
             rdf_type_2 = rdf2 if not pd.isna(rdf2) else None
             break
-            
+    
     #FORMATAGE DONNÉES
+    timezone_exp = dataframe['experiment_timezone'].dropna().iloc[0] if 'experiment_timezone' in dataframe.columns else 'UTC'
     desired_format = "%Y-%m-%dT%H:%M:%S%z"
     df_data = pd.read_excel(document_data)
-    df_data['Measuring Date'] = df_data['Measuring Date'].dt.date
-    df_data['Measuring Time'] = df_data['Measuring Time'].dt.tz_localize('UTC').dt.tz_convert('Europe/Helsinki').dt.strftime(desired_format)
+    
+    # ON RECUPERE LE TEMPS DANS TIMESTAMP ET ON CONVERTI EVENTUELLEMENT
+    df_data['Measuring Time'] = pd.to_datetime(df_data['timestamp'], format="%Y-%m-%dT%H:%M:%S%z")
+    df_data['Measuring Time'] = df_data['Measuring Time'].dt.tz_localize('UTC').dt.tz_convert(timezone_exp).dt.strftime(desired_format)
+
     if 'Angle' not in df_data.columns:
         df_data['Angle']=None
     if 'Round Order' not in df_data.columns:
         df_data['Round Order']=None
-        
+
     # ON TENTE DE RECUPERE LES DONNÉES DES DATAFILES QU'ON A UPLOAD PRECEDEMMENT SI DATAFILE IL Y A
     prov = provenance_datafile2 if provenance_datafile2 is not None else provenance_datafile1
     rdf_type = rdf_type_2 if rdf_type_2 is not None else rdf_type_1
