@@ -203,8 +203,7 @@ class TestDataImport:
         fake_time = pd.Timestamp('2023-01-01 10:00:00')
         df_data = pd.DataFrame({
             "Plant ID": ["Plant_1", "Plant_2"],
-            "Measuring Date": [fake_time, fake_time],
-            "Measuring Time": [fake_time, fake_time],
+            "timestamp": [fake_time, fake_time],
             "Angle": [45, 90],
             "Round Order": [1, 1],
             "Taille": [15.5, 20.0]
@@ -269,8 +268,7 @@ class TestDataImport:
         fake_time = pd.Timestamp('2023-01-01 10:00:00')
         df_data = pd.DataFrame({
             "Plant ID": ["Plant_1"],
-            "Measuring Date": [fake_time],
-            "Measuring Time": [fake_time],
+            "timestamp": [fake_time],
             "Angle": [45],
             "Round Order": [1],
             "Taille": [15.5]
@@ -283,7 +281,7 @@ class TestDataImport:
         mock_existing_data.target = "http://fake-uri.com/so/1"
         
         # CORRECTION ICI : On doit impérativement localiser en UTC AVANT de convertir vers Helsinki
-        mock_existing_data._date = fake_time.tz_localize('UTC').tz_convert('Europe/Helsinki').strftime("%Y-%m-%dT%H:%M:%S%z").replace('+', '.000+')
+        mock_existing_data._date = fake_time.tz_localize('UTC').tz_convert('UTC').strftime("%Y-%m-%dT%H:%M:%S%z").replace('+', '.000+')
         
         mock_existing_data.metadata = {"Round Order": 1}
         
@@ -298,8 +296,15 @@ class TestDataImport:
 
         # Act
         create_data(
-            "dummy_data.xlsx", "dummy_miappe.xlsx", "test_user", MagicMock(),
-            morpho_info, {"Prov": "uri"}, {"dummy_data.xlsx": {}}, sci_obj_uri, avancement_upload=mock_avancement
+            "dummy_data.xlsx", 
+            "dummy_miappe.xlsx", 
+            "test_user", 
+            MagicMock(),
+            morpho_info, 
+            {"Prov_Test": "http://fake-uri.com/prov/1"}, # CORRECTION ICI
+            {"dummy_data.xlsx": {"prov_morpho_parameters": "Prov_Test"}}, # ET ICI
+            sci_obj_uri, 
+            avancement_upload=mock_avancement
         )
 
         # Assert : Puisque la donnée existait, add_list_data ne doit pas être appelé !
@@ -334,12 +339,19 @@ class TestDataImport:
         df_data = pd.DataFrame({
             "Plant ID": ["Plant_1", "Plant_2"],
             "Germplasm": ["Apache", "Zea mays"],
-            "Factor Level": [None, None]
+            "Factor1": ['High', 'Low']
         })
         
+        df_factors = pd.DataFrame({
+            "name": ["Factor1"], 
+            "description": ["Desc 1"]
+        })
+
+
+
         df_precedent = pd.DataFrame(columns=["studyId", "obsUnitType"])
         
-        mock_read_excel.side_effect = [df_miappe, df_data, df_precedent]
+        mock_read_excel.side_effect = [df_miappe, df_factors, df_data, df_precedent]
         mock_get_name_space.return_value = ("fake_namespace:", "http://fake-base.com/")
 
         # Mocks API
@@ -349,12 +361,16 @@ class TestDataImport:
         mock_exp.uri = "http://fake-uri.com/exp/1"
         MockExpApi.return_value.search_experiments.return_value = {"result": [mock_exp]}
         
-        # Faux facteur pour éviter de déclencher create_factor
-        mock_factor_level = MagicMock()
-        mock_factor_level.name = "Fake_Level"
-        mock_factor_level.uri = "http://fake-uri.com/factor/level/1"
+        mock_factor_level_1 = MagicMock()
+        mock_factor_level_1.name = "High"
+        mock_factor_level_1.uri = "http://fake-uri.com/factor/level/high"
+        
+        mock_factor_level_2 = MagicMock()
+        mock_factor_level_2.name = "Low"
+        mock_factor_level_2.uri = "http://fake-uri.com/factor/level/low"
+        
         mock_factor_result = MagicMock()
-        mock_factor_result.levels = [mock_factor_level]
+        mock_factor_result.levels = [mock_factor_level_1, mock_factor_level_2]
         MockExpApi.return_value.get_available_factors.return_value = {"result": [mock_factor_result]}
         
         # Ontologie
@@ -400,11 +416,15 @@ class TestDataImport:
         df_data = pd.DataFrame({
             "Plant ID": ["Plant_1"],
             "Germplasm": ["Apache"],
-            "Factor Level": [None]
+            "Factor1": [None]
+        })
+        df_factors = pd.DataFrame({
+            "name": ["Factor1"], 
+            "description": ["Desc 1"]
         })
         
         # Exactement 2 appels à read_excel nécessaires
-        mock_read_excel.side_effect = [df_miappe, df_data]
+        mock_read_excel.side_effect = [df_miappe,df_factors, df_data]
         mock_get_name_space.return_value = ("fake_namespace:", "http://fake-base.com/")
         
         fake_client = MagicMock()
@@ -452,7 +472,12 @@ class TestDataImport:
             "scientific_object_type": ["vocabulary:Plant"]
         })
         df_data = pd.DataFrame({"Plant ID": ["Plant_1"]})
-        mock_read_excel.side_effect = [df_miappe, df_data]
+        df_factors = pd.DataFrame({
+            "name": ["Factor1"], 
+            "description": ["Desc 1"]
+        })
+
+        mock_read_excel.side_effect = [df_miappe,df_factors, df_data]
         
         fake_client = MagicMock()
         

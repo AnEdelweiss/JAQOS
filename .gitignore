@@ -5,10 +5,9 @@ build/
 dist/
 wheels/
 *.egg-info
-test/
 exp_database/
 src/simple/logs_SIMPLE
 essais
-toolbox
+toolbox/
 # Virtual environments
 .venv
