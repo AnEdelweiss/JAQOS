@@ -10,6 +10,8 @@ This is a work in progress, feedbacks are welcome.
 
 or here : [asciinema link](https://asciinema.org/a/wbQdA2NXiHwN86DZ)
 
+Dummy experiment on Phis to show how the final experiment would look : [link to sandbox](https://opensilex.org/sandbox/app/experiment/details/opensilex-sandbox%3Aid%2Fexperiment%2Fdummy_experiment)
+
 ## Description.
 
 In the context of my internship, I am working on SIMPLE, a Command Line Interface coded in python with a focus on ease of use, rapidity and flexibility. This tool will ( I hope ) help researchers upload MIAPPE compliant phenotyping data on OpenSilex instances without any efforts. Allowing them to keep germplasm banks up to date, to create experiments, create or add scientific objects to an experiment, add pictures, DATA and more.
