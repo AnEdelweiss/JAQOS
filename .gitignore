@@ -9,5 +9,8 @@ exp_database/
 src/simple/logs_SIMPLE
 essais
 toolbox/
+Documentation_WIP.md
+.coverage
+htmlcov
 # Virtual environments
 .venv

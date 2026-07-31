@@ -170,7 +170,7 @@ def ui_import_datafiles(document_miappe, document_data, wd_experience, login, si
         cam_pos, plant_mask, protocol_found = get_round_protocol_info(wd_experience, document_data)
 
     if not protocol_found:
-        stop = Prompt.ask("[bold red][X] PlantMask and Camera Position were not found, do you want to continue?\nThis is not a problem if your instance does not use round protocol info..[/bold red]", choices=["y", "n"], default="y")
+        stop = Prompt.ask("[cyan][X] PlantMask and Camera Position were not found, do you want to continue?\nThis is not a problem if your instance does not use round protocol info..[/cyan]", choices=["y", "n"], default="y")
         if stop == "n":
             raise SimpleBaseException("User cancelled import at Round protocol phase.")
     else:

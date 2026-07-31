@@ -59,7 +59,7 @@ def get_round_protocol_info(wd_experience,document_data):
                     cam_pos[round_index] = cam_pos_rd
         logger.info("Plant_mask and Camera Position Info found !")
     else:
-        logger.warning("00-RoundProtocol folder missing (of if not in use)")
+        logger.warning("00-RoundProtocol folder missing (ok if not in use)")
         return cam_pos, plant_mask, False
     return cam_pos, plant_mask, True
 
