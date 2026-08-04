@@ -1,5 +1,8 @@
 import sys
 
+import logging
+from PyQt6.QtCore import pyqtSignal, QObject
+
 import opensilexClientToolsPython as silex
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -40,6 +43,20 @@ from simple.erreurs import (
 from simple.experiment import api_find_experiment_by_name, create_experiment
 from simple.systeme_logs import logger
 
+# 1. The Signal Emitter (Safely crosses threads)
+class LogEmitter(QObject):
+    log_signal = pyqtSignal(str)
+
+# 2. The Custom Logging Handler
+class GUIConsoleHandler(logging.Handler):
+    def __init__(self, emitter):
+        super().__init__()
+        self.emitter = emitter
+
+    def emit(self, record):
+        # Format the log message and emit it to the GUI
+        msg = self.format(record)
+        self.emitter.log_signal.emit(msg)
 
 class SimpleGUI(QMainWindow):
     def __init__(self):
@@ -56,6 +73,12 @@ class SimpleGUI(QMainWindow):
         self.repertoire_photos = None
 
         self.init_ui()
+
+    def closeEvent(self, event):
+        # Clean up the logger handler when the app closes
+        logger.removeHandler(self.gui_logger_handler)
+        super().closeEvent(event)
+        
 
     def init_ui(self):
         central_widget = QWidget()
@@ -85,6 +108,26 @@ class SimpleGUI(QMainWindow):
         self.btn_quit = QPushButton("Quit")
         self.btn_quit.clicked.connect(self.close)
         layout.addWidget(self.btn_quit)
+
+        # --- NEW CONSOLE WIDGET ---
+        layout.addWidget(QLabel("Console Output:"))
+        from PyQt6.QtWidgets import QPlainTextEdit
+        self.console_output = QPlainTextEdit()
+        self.console_output.setReadOnly(True)
+        # Optional: set a darker background to make it look like a terminal
+        self.console_output.setStyleSheet("background-color: #1e1e1e; color: #d4d4d4; font-family: monospace;")
+        layout.addWidget(self.console_output)
+
+        # --- WIRE THE LOGGER TO THE CONSOLE ---
+        self.log_emitter = LogEmitter()
+        self.log_emitter.log_signal.connect(self.console_output.appendPlainText)
+
+        self.gui_logger_handler = GUIConsoleHandler(self.log_emitter)
+        self.gui_logger_handler.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
+        
+        # Attach our custom handler to the engine's logger
+        logger.addHandler(self.gui_logger_handler)
+
 
     def action_login(self):
         host_display, ok = QInputDialog.getItem(
@@ -184,7 +227,7 @@ class SimpleGUI(QMainWindow):
         QMessageBox.information(
             self, "Reset", "Working directory and selected files have been reset."
         )
-
+    
     def with_progress(self, message, func, callback=None):
         self.progress = QProgressDialog(message, None, 0, 0, self)
         self.progress.setWindowTitle("Please wait")
@@ -211,6 +254,8 @@ class SimpleGUI(QMainWindow):
             QApplication.restoreOverrideCursor()
 
     def _status_callback(self, message):
+        # We can just use the logger, which will now automatically route to the GUI!
+        logger.info(message)
         QApplication.processEvents()
 
     def do_create_experiment(self):
