@@ -87,11 +87,13 @@ class SimpleGUI(QMainWindow):
         layout.addWidget(self.btn_quit)
 
     def action_login(self):
-        host, ok = QInputDialog.getItem(
-            self, "Login", "Select host instance:", list(INSTANCES.keys()), 0, False
+        host_display, ok = QInputDialog.getItem(
+            self, "Login", "Select host instance:", list(INSTANCES.values()), 0, False
         )
         if not ok:
             return
+        
+        host = next(key for key, value in INSTANCES.items() if value == host_display)
         identifier, ok = QInputDialog.getText(self, "Login", "Identifier:")
         if not ok:
             return

@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "SIMPLE version 0.12"
+        description: "SIMPLE"
         required: true
         
 permissions:
