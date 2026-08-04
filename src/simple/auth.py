@@ -21,7 +21,7 @@ def get_login():
 
     table = Table(title="Available instances", show_header=False)
     table.add_column("Index", style="cyan")
-    table.add_column("Nom", style="green")
+    table.add_column("Name", style="green")
     for index, nom in enumerate(liste_instances):
         table.add_row(str(index), nom)
     console.print(table)
@@ -39,10 +39,9 @@ def get_login():
 def deconnexion(silex_API_Client) -> bool:
     if 'Authorization' in silex_API_Client.default_headers:
         try:
-            silex.AuthenticationApi(silex_API_Client).logout
+            silex.AuthenticationApi(silex_API_Client).logout()
             if 'Authorization' in silex_API_Client.default_headers:
                 del silex_API_Client.default_headers['Authorization']
-            #console.print("[bold green]Successfully disconnected[/bold green]")
         except Exception as e:
             console.print(f"[bold red]Error during disconnection : {e}[/bold red]")
             return False
@@ -61,8 +60,8 @@ def check_connection_internet():
             return
         # catching exception
         except (requests.ConnectionError,requests.Timeout):
-            logger.error("No internet acess :/")
-            raise NetworkError("No internet acess :/")
+            logger.error("No internet access :/")
+            raise NetworkError("No internet access :/")
 #Check rapide de la connexion
 def is_connected(silex_API_Client) -> bool:
     if silex_API_Client is not None and 'Authorization' in silex_API_Client.default_headers:
@@ -81,13 +80,13 @@ def connexion(login, silex_API_Client) -> bool:
             if "HTTP response body:" in error_str:
                 json_part = error_str.split("HTTP response body:")[1].strip() #on garde seulement le json
                 error_data = json.loads(json_part)
-                logger.error(f"User authentification failed :{error_data['result']['message']}")
-                raise AuthenticationError(f"User authentification failed :{error_data['result']['message']}")
+                logger.error(f"User authentication failed :{error_data['result']['message']}")
+                raise AuthenticationError(f"User authentication failed :{error_data['result']['message']}")
             else:
-                logger.error(f"error : User authentification failed :{error_str}")
-                raise AuthenticationError(f"error : User authentification failed :{error_str}")
+                logger.error(f"error : User authentication failed :{error_str}")
+                raise AuthenticationError(f"error : User authentication failed :{error_str}")
 
 
         except (json.JSONDecodeError, KeyError, IndexError):
-            logger.error(f"error : User authentification failed :{error_str}")
+            logger.error(f"error : User authentication failed :{error_str}")
             raise AuthenticationError(f"error is impossible to decode :{error_str}")

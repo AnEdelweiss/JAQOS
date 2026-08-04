@@ -5,7 +5,7 @@ build/
 dist/
 wheels/
 *.egg-info
-exp_database/
+exp_database
 src/simple/logs_SIMPLE
 essais
 toolbox/

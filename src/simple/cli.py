@@ -19,7 +19,7 @@ def ui_find_experiment(silex_API_Client):
         exp_data = api_find_experiment_by_name(silex_API_Client, name_exp)
         
     if not exp_data:
-        Prompt.ask("[bold red]No experiment with that name were found. :([/bold red]\nPress Enter to go back to the main menu")
+        Prompt.ask("[bold red]No experiment with that name was found.([/bold red]\nPress Enter to go back to the main menu")
         return
 
     exp_data = exp_data[0]
@@ -78,7 +78,7 @@ def ui_import_sci_obj(document_data,document_miappe,silex_API_Client):
         sci_obj_uri,created_sci_obj = create_sci_obj(document_data, document_miappe, silex_API_Client,status_callback=afficher_statut)
     found_sci_obj=len(sci_obj_uri)-created_sci_obj
 
-    console.print(f"[bold green]End of search : {found_sci_obj} found,{created_sci_obj} created. [/bold green]")
+    console.print(f"[bold green]End of search : {found_sci_obj} found, {created_sci_obj} created. [/bold green]")
     if created_sci_obj>0:
         console.print("Scientific object sheet was sucessfully modified in the output MIAPPE")
 
@@ -117,7 +117,7 @@ def ui_import_data(document_data, document_miappe,login,silex_API_Client):
         sci_obj_uri, created_sci_obj = create_sci_obj(document_data, document_miappe, silex_API_Client)
 
     found_sci_obj=len(sci_obj_uri)-created_sci_obj
-    console.print(f"[bold green]End of search : {found_sci_obj} found,{created_sci_obj} created. [/bold green]")
+    console.print(f"[bold green]End of search : {found_sci_obj} found, {created_sci_obj} created. [/bold green]")
     
     #on gère l'affichage des progression d'importation de données
     def afficher_progres(nom_variable, nb_lignes):

@@ -35,7 +35,7 @@ class TestAuth:
         with pytest.raises(NetworkError) as error_info:
             check_connection_internet()
             
-        assert "No internet acess :/" in str(error_info.value)
+        assert "No internet access :/" in str(error_info.value)
 
     # ==========================================
     # TESTS POUR IS_CONNECTED
