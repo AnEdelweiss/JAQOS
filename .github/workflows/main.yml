@@ -28,17 +28,29 @@ jobs:
         uses: astral-sh/setup-uv@v8.0.0
 
       - name: Install dependencies
-        run: uv pip install --system .
+        # Added pyqt6 to ensure it is available for the GUI build
+        run: uv pip install --system . pyqt6
 
-      - name: Build executable
+      - name: Build CLI executable
         run: pyinstaller --onefile --name SIMPLE src/simple/__main__.py
 
-      - name: Rename executable
+      - name: Create GUI entry script
         run: |
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            mv dist/SIMPLE.exe dist/SIMPLE.exe
-          elif [[ "$RUNNER_OS" == "Linux" ]]; then
+          echo "import sys" > launch_gui.py
+          echo "import runpy" >> launch_gui.py
+          echo "sys.argv.append('--gui')" >> launch_gui.py
+          echo "runpy.run_path('src/simple/__main__.py', run_name='__main__')" >> launch_gui.py
+        shell: bash
+
+      - name: Build GUI executable
+        # --windowed hides the terminal window on OS desktop environments
+        run: pyinstaller --onefile --windowed --name SIMPLE-gui launch_gui.py
+
+      - name: Rename executables
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
             mv dist/SIMPLE dist/SIMPLE-linux
+            mv dist/SIMPLE-gui dist/SIMPLE-gui-linux
           fi
         shell: bash
 
@@ -61,11 +73,8 @@ jobs:
         with:
           merge-multiple: true
 
-      - name: List downloaded files (Debugging)
-        run: ls -R
-
-      - name: Make files executable (Linux/Mac)
-        run: chmod +x app-* || true
+      - name: Make files executable (Linux)
+        run: chmod +x SIMPLE-linux SIMPLE-gui-linux || true
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
@@ -77,3 +86,5 @@ jobs:
           files: |
             SIMPLE-linux
             SIMPLE.exe
+            SIMPLE-gui-linux
+            SIMPLE-gui.exe

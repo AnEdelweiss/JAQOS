@@ -71,7 +71,7 @@ This project requires Python 3.14.
 - cd SIMPLE
 - uv venv
 - uv pip install -r pyproject.toml
-- uv run SIMPLE
+- uv run simple
 
 You can then use the provided dummy experiment in test_SIMPLE, you can also modify the content of the miappe_template to try and create different experiments, germplasms etc...
 Everything should work !
