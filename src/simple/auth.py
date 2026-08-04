@@ -1,17 +1,19 @@
-import opensilexClientToolsPython as silex
-from simple.ui import console, Prompt,IntPrompt,Table
-from simple.erreurs import NetworkError,AuthenticationError
-from simple.systeme_logs import logger
 import json
+
+import opensilexClientToolsPython as silex
 import requests
+
+from simple.erreurs import AuthenticationError, NetworkError
+from simple.systeme_logs import logger
+from simple.ui import IntPrompt, Prompt, Table, console
 
 # Initiatialisation des différentes instances
 INSTANCES = {
     "https://opensilex.org/sandbox/rest": "Sandbox",
     "https://phis.emphasis.fedcloud.eu/uh/rest": "Helsinki/UH",
-    "https://opensilex.org/demo2/rest": "test1.5.1"
-
+    "https://opensilex.org/demo2/rest": "test1.5.1",
 }
+
 
 def get_login():
     console.print("[cyan]Connection :[/cyan]")
@@ -26,27 +28,44 @@ def get_login():
         table.add_row(str(index), nom)
     console.print(table)
     while True:
-        temp_Inst = IntPrompt.ask(f"[green]\\[+][/green][cyan]On which instance would you like to log in (0-{len(liste_instances)-1})[/cyan]")
-        if 0<=temp_Inst<=len(liste_instances)-1:
+        temp_Inst = IntPrompt.ask(
+            f"[green]\\[+][/green][cyan]On which instance would you like to log in (0-{len(liste_instances) - 1})[/cyan]"
+        )
+        if 0 <= temp_Inst <= len(liste_instances) - 1:
             login["host"] = liste_url[temp_Inst]
             break
         else:
-            console.print(f"[red][bold]Please type a number between [white]0[/white] and [white]{len(liste_instances)-1}[/white][/red][/bold]")
-    login["identifier"] = Prompt.ask(f"[green]\\[+][/green]  [cyan]Username/mail on [/cyan] [green]{INSTANCES[login['host']]}[/green]")
-    login["password"] = Prompt.ask("[green]\\[+][/green] [cyan] Password[/cyan] [red](it is invisible for security reasons)[/red]", password=True)
-    return login 
-#On deconnecte le client avant toute nouvelle connexion
+            console.print(
+                f"[red][bold]Please type a number between [white]0[/white] and [white]{len(liste_instances) - 1}[/white][/red][/bold]"
+            )
+    if temp_Inst == 0:
+        login["identifier"] = "guest@opensilex.org"
+        login["password"] = "guest"
+    else:
+        login["identifier"] = Prompt.ask(
+            f"[green]\\[+][/green]  [cyan]Username/mail on [/cyan] [green]{INSTANCES[login['host']]}[/green]"
+        )
+        login["password"] = Prompt.ask(
+            "[green]\\[+][/green] [cyan] Password[/cyan] [red](it is invisible for security reasons)[/red]",
+            password=True,
+        )
+    return login
+
+
+# On deconnecte le client avant toute nouvelle connexion
 def deconnexion(silex_API_Client) -> bool:
-    if 'Authorization' in silex_API_Client.default_headers:
+    if "Authorization" in silex_API_Client.default_headers:
         try:
-            silex.AuthenticationApi(silex_API_Client).logout()
-            if 'Authorization' in silex_API_Client.default_headers:
-                del silex_API_Client.default_headers['Authorization']
+            silex.AuthenticationApi(silex_API_Client).logout
+            if "Authorization" in silex_API_Client.default_headers:
+                del silex_API_Client.default_headers["Authorization"]
         except Exception as e:
             console.print(f"[bold red]Error during disconnection : {e}[/bold red]")
             return False
     return True
-#Je verifie que l'utilisateur a accès à internet.
+
+
+# Je verifie que l'utilisateur a accès à internet.
 def check_connection_internet():
     with console.status("checking internet access..."):
         # initializing URL
@@ -55,38 +74,52 @@ def check_connection_internet():
         timeout = 5
         try:
             # requesting URL
-            requests.get(url,timeout=timeout)
+            requests.get(url, timeout=timeout)
             logger.info("User has internet !")
             return
         # catching exception
-        except (requests.ConnectionError,requests.Timeout):
+        except requests.ConnectionError, requests.Timeout:
             logger.error("No internet access :/")
             raise NetworkError("No internet access :/")
-#Check rapide de la connexion
+
+
+# Check rapide de la connexion
 def is_connected(silex_API_Client) -> bool:
-    if silex_API_Client is not None and 'Authorization' in silex_API_Client.default_headers:
-        return True
-    return False
-#Connexion et gestion des erreurs de connexion
+    return (
+        silex_API_Client is not None
+        and "Authorization" in silex_API_Client.default_headers
+    )
+
+
+# Connexion et gestion des erreurs de connexion
 def connexion(login, silex_API_Client) -> bool:
     deconnexion(silex_API_Client)
     try:
-        silex_API_Client.connect_to_opensilex_ws(**login)#Connexion avec le login reçu via la CLI
+        silex_API_Client.connect_to_opensilex_ws(
+            **login
+        )  # Connexion avec le login reçu via la CLI
         return True
 
     except Exception as e:
-        error_str = str(e) #exception sous string
+        error_str = str(e)  # exception sous string
         try:
             if "HTTP response body:" in error_str:
-                json_part = error_str.split("HTTP response body:")[1].strip() #on garde seulement le json
+                json_part = error_str.split("HTTP response body:")[
+                    1
+                ].strip()  # on garde seulement le json
                 error_data = json.loads(json_part)
-                logger.error(f"User authentication failed :{error_data['result']['message']}")
-                raise AuthenticationError(f"User authentication failed :{error_data['result']['message']}")
+                logger.error(
+                    f"User authentication failed :{error_data['result']['message']}"
+                )
+                raise AuthenticationError(
+                    f"User authentication failed :{error_data['result']['message']}"
+                )
             else:
                 logger.error(f"error : User authentication failed :{error_str}")
-                raise AuthenticationError(f"error : User authentication failed :{error_str}")
+                raise AuthenticationError(
+                    f"error : User authentication failed :{error_str}"
+                )
 
-
-        except (json.JSONDecodeError, KeyError, IndexError):
+        except json.JSONDecodeError, KeyError, IndexError:
             logger.error(f"error : User authentication failed :{error_str}")
             raise AuthenticationError(f"error is impossible to decode :{error_str}")

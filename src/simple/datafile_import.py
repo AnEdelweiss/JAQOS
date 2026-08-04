@@ -1,24 +1,27 @@
-import os
-import json
-import pandas as pd
-import opensilexClientToolsPython as silex
-import datetime
 import concurrent.futures
-from simple.auth import connexion
-from simple.__init__ import __version__
-from simple.systeme_logs import logger
-from simple.erreurs import SimpleBaseException,DataImportError
+import datetime
+import json
+import os
+
+import opensilexClientToolsPython as silex
+import pandas as pd
 from lxml import etree as ET
-    
-def get_round_protocol_info(wd_experience,document_data):
-    #Get RoundProtocol Infos 
+
+from simple.__init__ import __version__
+from simple.auth import connexion
+from simple.erreurs import DataImportError, SimpleBaseException
+from simple.systeme_logs import logger
+
+
+def get_round_protocol_info(wd_experience, document_data):
+    # Get RoundProtocol Infos
     plant_mask = {}
     cam_pos = {}
-    Round_folder = os.path.join(wd_experience, '00-RoundProtocol')
+    Round_folder = os.path.join(wd_experience, "00-RoundProtocol")
 
     if os.path.isdir(Round_folder):
         Round_files = []
-        for (root, dirs, files) in os.walk(Round_folder):
+        for root, dirs, files in os.walk(Round_folder):
             for name in files:
                 Round_files.append(os.path.join(root, name))
 
@@ -26,22 +29,29 @@ def get_round_protocol_info(wd_experience,document_data):
         for wd_round in Round_files:
             filename = os.path.basename(wd_round).replace(".txt", "")
             Exp_Rd_ls = filename.split("-")
-            Exp_Rd_Dict.update({wd_round: {"Experiment": Exp_Rd_ls[1], "Round": (Exp_Rd_ls[2][0:3]).replace("_","")}})
-       
-        # Create Dictionary for all parameters 
+            Exp_Rd_Dict.update(
+                {
+                    wd_round: {
+                        "Experiment": Exp_Rd_ls[1],
+                        "Round": (Exp_Rd_ls[2][0:3]).replace("_", ""),
+                    }
+                }
+            )
+
+        # Create Dictionary for all parameters
         df_data = pd.read_excel(document_data)
-        PID = df_data['PID'].unique()[0]
-        # Transform RoundProtocol to xml 
+        PID = df_data["PID"].unique()[0]
+        # Transform RoundProtocol to xml
         for key, value in Exp_Rd_Dict.items():
             try:
-                with open(key, encoding='utf-16') as file:
+                with open(key, encoding="utf-16") as file:
                     xml_str = file.read().replace("\x00", "")
                 root = ET.fromstring(xml_str)
             except Exception:
                 with open(key) as file:
                     xml_str = file.read().replace("\x00", "")
                 root = ET.fromstring(xml_str)
-        # Get plant_mask Info for all rounds 
+            # Get plant_mask Info for all rounds
             plant_mask_rd = {}
             for child in root.iter(PID):
                 for subchild in child.iter("PlantMask"):
@@ -63,31 +73,43 @@ def get_round_protocol_info(wd_experience,document_data):
         return cam_pos, plant_mask, False
     return cam_pos, plant_mask, True
 
-def parse_excel_for_metadata(df_data, dict_paths, prov, file_type, timezone_exp='UTC'):
+
+def parse_excel_for_metadata(df_data, dict_paths, prov, file_type, timezone_exp="UTC"):
 
     metadata_dict = {}
     desired_format = "%Y-%m-%dT%H:%M:%S%z"
-    
-    # Process the single timestamp column using the provided timezone
-    df_data['Measuring Time'] = pd.to_datetime(df_data['timestamp'], format="%Y-%m-%d %H:%M:%S")
-    df_data['Measuring Time'] = df_data['Measuring Time'].dt.tz_localize('UTC').dt.tz_convert(timezone_exp).dt.strftime(desired_format)
 
-    for row in list(df_data.to_dict('records')):
-        exp_id = row['Experiment ID']
-        tray_id = row['Plant ID']
-        pid = row.get("PID",None)
+    # Process the single timestamp column using the provided timezone
+    df_data["Measuring Time"] = pd.to_datetime(
+        df_data["timestamp"], format="%Y-%m-%d %H:%M:%S"
+    )
+    df_data["Measuring Time"] = (
+        df_data["Measuring Time"]
+        .dt.tz_localize("UTC")
+        .dt.tz_convert(timezone_exp)
+        .dt.strftime(desired_format)
+    )
+
+    for row in list(df_data.to_dict("records")):
+        exp_id = row["Experiment ID"]
+        tray_id = row["Plant ID"]
+        pid = row.get("PID", None)
 
         if file_type == "datafile1":
             filename = row.get("Datafile1_Filename")
         else:
             filename = row.get("Datafile2_Filename")
-            
+
         if pd.isna(filename) or filename not in dict_paths:
-            logger.error(f"warning : {filename} in 'data files' sheet of the  MIAPPE file is either empty or maybe there is a typo etc...")
-            raise SimpleBaseException(f"warning : {filename} in 'data files' sheet of the  MIAPPE file is either empty or maybe there is a typo etc...")
+            logger.error(
+                f"warning : {filename} in 'data files' sheet of the  MIAPPE file is either empty or maybe there is a typo etc..."
+            )
+            raise SimpleBaseException(
+                f"warning : {filename} in 'data files' sheet of the  MIAPPE file is either empty or maybe there is a typo etc..."
+            )
             continue
 
-        date = row['Measuring Time']
+        date = row["Measuring Time"]
 
         metadata = {
             "Path": dict_paths[filename],
@@ -96,90 +118,144 @@ def parse_excel_for_metadata(df_data, dict_paths, prov, file_type, timezone_exp=
             "Plant ID": tray_id,
             "PID": pid,
             "Prov": prov,
-            "ImgType": filename.replace('-','_').split("_")[-1]
+            "ImgType": filename.replace("-", "_").split("_")[-1],
         }
 
-        if 'Angle' in row:
-            metadata["Angle"] = row['Angle']
-        if 'Round Order' in row:
-            metadata["Round Order"] = int(row['Round Order'])
+        if "Angle" in row:
+            metadata["Angle"] = row["Angle"]
+        if "Round Order" in row:
+            metadata["Round Order"] = int(row["Round Order"])
         metadata_dict[filename] = metadata
 
     return metadata_dict
+
 
 def get_existing_datafiles(dat_api, prov_uri, exp_uri):
     if not prov_uri:
         return set()
     # On prends le set de tuples (target, date, angle, round_order) existants
-    dat_src = dat_api.get_data_file_descriptions_by_search(provenances=[prov_uri], experiments=[exp_uri], page_size=100000)["result"]
-    #je convertit en string les camera angle et les round order pour eviter les erreurs lors de la recuperation des metadata après
+    dat_src = dat_api.get_data_file_descriptions_by_search(
+        provenances=[prov_uri], experiments=[exp_uri], page_size=100000
+    )["result"]
+    # je convertit en string les camera angle et les round order pour eviter les erreurs lors de la recuperation des metadata après
     return {
-            (
-                elts.target, 
-                elts._date,
-                str(elts.provenance.settings.get("Camera Angle")) if elts.provenance.settings and elts.provenance.settings.get("Camera Angle") is not None else None, 
-                str(elts.metadata.get('Round Order')) if elts.metadata and elts.metadata.get('Round Order') is not None else None
-            )
-            for elts in dat_src
-        }
+        (
+            elts.target,
+            elts._date,
+            str(elts.provenance.settings.get("Camera Angle"))
+            if elts.provenance.settings
+            and elts.provenance.settings.get("Camera Angle") is not None
+            else None,
+            str(elts.metadata.get("Round Order"))
+            if elts.metadata and elts.metadata.get("Round Order") is not None
+            else None,
+        )
+        for elts in dat_src
+    }
+
 
 def check_for_datafiles(document_data, repertoire_photos):
-        #Liste des datafiles
+    # Liste des datafiles
     ls_files_dict = {}
-    for (root, dirs, files) in os.walk(repertoire_photos):
+    for root, dirs, files in os.walk(repertoire_photos):
         for filename in files:
             ls_files_dict[filename] = os.path.join(root, filename)
 
     df_data = pd.read_excel(document_data)
-    #traitement des datafiles1
+    # traitement des datafiles1
     dict_datafile1 = {}
     missing_datafile1 = set()
-    if 'Datafile1_Filename' in df_data.columns:
-        set_ls_datafile1 = set(df_data['Datafile1_Filename'].dropna().unique())
-        dict_datafile1 = {f: ls_files_dict[f] for f in set_ls_datafile1 if f in ls_files_dict}
+    if "Datafile1_Filename" in df_data.columns:
+        set_ls_datafile1 = set(df_data["Datafile1_Filename"].dropna().unique())
+        dict_datafile1 = {
+            f: ls_files_dict[f] for f in set_ls_datafile1 if f in ls_files_dict
+        }
         missing_datafile1 = set_ls_datafile1 - set(dict_datafile1.keys())
     else:
-        logger.error("User tried to import datafiles without 'datafile1_Filename column")
-        raise DataImportError("You are importing datafiles, you have to specify the name of the file for each row in a column named 'Datafile1_Filename'.")
-    #traitement des datafiles2
-    has_datafile2 = 'Datafile2_Filename' in df_data.columns
+        logger.error(
+            "User tried to import datafiles without 'datafile1_Filename column"
+        )
+        raise DataImportError(
+            "You are importing datafiles, you have to specify the name of the file for each row in a column named 'Datafile1_Filename'."
+        )
+    # traitement des datafiles2
+    has_datafile2 = "Datafile2_Filename" in df_data.columns
     dict_datafile2 = {}
     missing_datafile2 = set()
     if has_datafile2:
-        set_ls_datafile2 = set(df_data['Datafile2_Filename'].dropna().unique())
-        dict_datafile2 = {f: ls_files_dict[f] for f in set_ls_datafile2 if f in ls_files_dict}
+        set_ls_datafile2 = set(df_data["Datafile2_Filename"].dropna().unique())
+        dict_datafile2 = {
+            f: ls_files_dict[f] for f in set_ls_datafile2 if f in ls_files_dict
+        }
         missing_datafile2 = set_ls_datafile2 - set(dict_datafile2.keys())
-    
-    return dict_datafile1, missing_datafile1, dict_datafile2, missing_datafile2, has_datafile2, df_data
 
-def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafile1, dict_datafile2, has_datafile2, prov_dict, datafile_provenance, sci_obj_uri, cam_pos, plant_mask, login, silex_API_Client,status_callback=None, progress_callback=None):
-    
+    return (
+        dict_datafile1,
+        missing_datafile1,
+        dict_datafile2,
+        missing_datafile2,
+        has_datafile2,
+        df_data,
+    )
+
+
+def execute_datafiles_upload(
+    document_miappe,
+    document_data,
+    df_data,
+    dict_datafile1,
+    dict_datafile2,
+    has_datafile2,
+    prov_dict,
+    datafile_provenance,
+    sci_obj_uri,
+    cam_pos,
+    plant_mask,
+    login,
+    silex_API_Client,
+    status_callback=None,
+    progress_callback=None,
+):
+
     connexion(login, silex_API_Client)
     dataframe = pd.read_excel(document_miappe, sheet_name="experiment", header=1)
-    dataframe.drop(dataframe.columns[dataframe.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
-    name_exp = dataframe['name'].dropna().iloc[0]
-    exp_search = silex.ExperimentsApi(silex_API_Client).search_experiments(name=name_exp)["result"]
+    dataframe.drop(
+        dataframe.columns[dataframe.columns.str.contains("unnamed", case=False)],
+        axis=1,
+        inplace=True,
+    )
+    name_exp = dataframe["name"].dropna().iloc[0]
+    exp_search = silex.ExperimentsApi(silex_API_Client).search_experiments(
+        name=name_exp
+    )["result"]
     exp_uri = exp_search[0].uri
-    logger.info(f'exp name : {name_exp}  exp uri : {exp_uri}')
-    #Setting timezone
-    if 'experiment_timezone' in dataframe.columns and not dataframe['experiment_timezone'].dropna().empty:
-        timezone_exp = dataframe['experiment_timezone'].dropna().iloc[0]
+    logger.info(f"exp name : {name_exp}  exp uri : {exp_uri}")
+    # Setting timezone
+    if (
+        "experiment_timezone" in dataframe.columns
+        and not dataframe["experiment_timezone"].dropna().empty
+    ):
+        timezone_exp = dataframe["experiment_timezone"].dropna().iloc[0]
     else:
-        timezone_exp = 'UTC'
+        timezone_exp = "UTC"
     logger.info(f"timezone : {timezone_exp}")
-    #GETTING PID and angle
-    if 'PID' in df_data.columns:
-        pid = df_data['PID'].unique()[0]
+    # GETTING PID and angle
+    if "PID" in df_data.columns:
+        pid = df_data["PID"].unique()[0]
         if status_callback:
-            status_callback(f'[bold cyan][✓] PID found:[/bold cyan] {pid}')
-        logger.info(f'[bold cyan][✓] PID found:[/bold cyan] {pid}')
-    else :
+            status_callback(f"[bold cyan][✓] PID found:[/bold cyan] {pid}")
+        logger.info(f"[bold cyan][✓] PID found:[/bold cyan] {pid}")
+    else:
         pid = None
-    if 'Angle' not in df_data.columns:
+    if "Angle" not in df_data.columns:
         df_data["Angle"] = None
         if status_callback:
-            status_callback("No angle data was found in the tabular data. It is not a problem, if it is intentional.")
-        logger.info("No angle data was found in the tabular data. It is not a problem, if it is intentional.")
+            status_callback(
+                "No angle data was found in the tabular data. It is not a problem, if it is intentional."
+            )
+        logger.info(
+            "No angle data was found in the tabular data. It is not a problem, if it is intentional."
+        )
 
     dat_api = silex.DataApi(silex_API_Client)
     datafile_name = os.path.basename(document_data)
@@ -199,61 +275,79 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
             rdf_type_2 = rdf2 if not pd.isna(rdf2) else None
             break
     if status_callback:
-        status_callback(f"[green][✓] Provenance for datafile1 found : {provenance_datafile1}[/green]")
-    logger.info(f"[green][✓] Provenance for datafile1 found : {provenance_datafile1}[/green]")
+        status_callback(
+            f"[green][✓] Provenance for datafile1 found : {provenance_datafile1}[/green]"
+        )
+    logger.info(
+        f"[green][✓] Provenance for datafile1 found : {provenance_datafile1}[/green]"
+    )
     if provenance_datafile2 is not None:
         if status_callback:
-            status_callback(f"[green][✓] Provenance for datafile2 found : {provenance_datafile2}[/green]")
-        logger.info(f"[green][✓] Provenance for datafile2 found : {provenance_datafile2}[/green]")
+            status_callback(
+                f"[green][✓] Provenance for datafile2 found : {provenance_datafile2}[/green]"
+            )
+        logger.info(
+            f"[green][✓] Provenance for datafile2 found : {provenance_datafile2}[/green]"
+        )
 
     # IMPORT DATAFILE 1
-    corr_data = parse_excel_for_metadata(df_data, dict_datafile1, provenance_datafile1, "datafile1",timezone_exp)
+    corr_data = parse_excel_for_metadata(
+        df_data, dict_datafile1, provenance_datafile1, "datafile1", timezone_exp
+    )
     if status_callback:
         status_callback("[green][✓] datafile1 data parsing OK [/green]")
     logger.info("[green][✓] datafile1 data parsing OK [/green]")
-    existing_datafile1_keys = get_existing_datafiles(dat_api, provenance_datafile1, exp_uri)
+    existing_datafile1_keys = get_existing_datafiles(
+        dat_api, provenance_datafile1, exp_uri
+    )
     if status_callback:
         status_callback("[green][✓] Search for existing datafiles1 OK [/green]")
     logger.info("[green][✓] Search for existing datafiles1 OK [/green]")
-    
-    #Meme conversion que précédemment ça devrait fonctionner du coup
+
+    # Meme conversion que précédemment ça devrait fonctionner du coup
     corr_to_upload = [
-        img for img in corr_data.values() 
+        img
+        for img in corr_data.values()
         if (
-            sci_obj_uri[img["Plant ID"]], 
-            img["Date"][:-5] + ".000" + img["Date"][-5:], 
-            str(img.get("Angle")) if pd.notna(img.get("Angle")) else None, 
-            str(img.get("Round Order")) if pd.notna(img.get("Round Order")) else None
-        ) not in existing_datafile1_keys
+            sci_obj_uri[img["Plant ID"]],
+            img["Date"][:-5] + ".000" + img["Date"][-5:],
+            str(img.get("Angle")) if pd.notna(img.get("Angle")) else None,
+            str(img.get("Round Order")) if pd.notna(img.get("Round Order")) else None,
+        )
+        not in existing_datafile1_keys
     ]
 
     # # ####TEST :
     # toutes_datafile1_triees = sorted(corr_data.values(), key=lambda x: x["Path"])
-    
+
     # # On isole les 5 premières pour le test
     # datafile1_test_subset = toutes_datafile1_triees[1210:1215]
 
     # corr_to_upload = [
-    #     img for img in corr_data.values() 
+    #     img for img in corr_data.values()
     #     if (
-    #         sci_obj_uri[img["Plant ID"]], 
-    #         img["Date"][:-5] + ".000" + img["Date"][-5:], 
-    #         str(img.get("Angle")) if pd.notna(img.get("Angle")) else None, 
+    #         sci_obj_uri[img["Plant ID"]],
+    #         img["Date"][:-5] + ".000" + img["Date"][-5:],
+    #         str(img.get("Angle")) if pd.notna(img.get("Angle")) else None,
     #         str(img.get("Round Order")) if pd.notna(img.get("Round Order")) else None
     #     ) not in existing_datafile1_keys
     # ]
     # # ###TEST
 
     if status_callback:
-        status_callback(f"[bold green]{len(corr_data) - len(corr_to_upload)}[cyan] Datafiles1 exists on [bold green]{len(corr_data)}[/bold green] total [/cyan]")
-    logger.info(f"[bold green]{len(corr_data) - len(corr_to_upload)}[cyan] Datafiles1 exists on [bold green]{len(corr_data)}[/bold green] total [/cyan]")
+        status_callback(
+            f"[bold green]{len(corr_data) - len(corr_to_upload)}[cyan] Datafiles1 exists on [bold green]{len(corr_data)}[/bold green] total [/cyan]"
+        )
+    logger.info(
+        f"[bold green]{len(corr_data) - len(corr_to_upload)}[cyan] Datafiles1 exists on [bold green]{len(corr_data)}[/bold green] total [/cyan]"
+    )
 
     timelimit = datetime.datetime.now() + datetime.timedelta(minutes=30)
-    
+
     def process_datafile1(img):
         path_ou_post = 0
         round_order = img.get("Round Order")
-        cam_pos_round = cam_pos.get(round_order, {}) 
+        cam_pos_round = cam_pos.get(round_order, {})
         settings_dict = {}
         if img.get("Angle") is not None:
             settings_dict["Camera Angle"] = img.get("Angle")
@@ -261,40 +355,47 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
             settings_dict["Camera Height"] = cam_pos_round.get("height")
         if cam_pos_round.get("Offset") is not None:
             settings_dict["Offset"] = cam_pos_round.get("Offset")
-            
+
         desc = {
             "rdf_type": f"vocabulary:{rdf_type_1}",
             "date": img["Date"],
             "target": sci_obj_uri[img["Plant ID"]],
-            "metadata": {"Round Order": round_order, "Imported with": f"SIMPLE {__version__}"},
+            "metadata": {
+                "Round Order": round_order,
+                "Imported with": f"SIMPLE {__version__}",
+            },
             "provenance": {
                 "uri": img["Prov"],
                 "settings": settings_dict,
-                "experiments": [exp_uri]
-            }
+                "experiments": [exp_uri],
+            },
         }
         if path_ou_post == 1:
-            dat_api.post_data_file_paths(body=[
-                silex.DataFilePathCreationDTO(
-                    rdf_type= f"vocabulary:{rdf_type_1}",
-                    _date= img["Date"],
-                    target=sci_obj_uri[img["Plant ID"]],
-                    metadata={
-                        "Round Order": round_order,
-                        "Imported with": f"SIMPLE {__version__}"
+            dat_api.post_data_file_paths(
+                body=[
+                    silex.DataFilePathCreationDTO(
+                        rdf_type=f"vocabulary:{rdf_type_1}",
+                        _date=img["Date"],
+                        target=sci_obj_uri[img["Plant ID"]],
+                        metadata={
+                            "Round Order": round_order,
+                            "Imported with": f"SIMPLE {__version__}",
                         },
-                    provenance={
-                        "uri": img["Prov"],
-                        "settings": settings_dict,
-                        "experiments": [exp_uri]
+                        provenance={
+                            "uri": img["Prov"],
+                            "settings": settings_dict,
+                            "experiments": [exp_uri],
                         },
-                    relative_path="" + os.path.basename(img["Path"]))])
+                        relative_path="" + os.path.basename(img["Path"]),
+                    )
+                ]
+            )
         else:
             dat_api.post_data_file(description=json.dumps(desc), file=img["Path"])
 
-    nom_tache_datafile1="[bold blue]Uploading datafiles 1...[/bold blue]"
-    if progress_callback and len(corr_to_upload)>0:
-        progress_callback(nom_tache_datafile1,total=len(corr_to_upload))
+    nom_tache_datafile1 = "[bold blue]Uploading datafiles 1...[/bold blue]"
+    if progress_callback and len(corr_to_upload) > 0:
+        progress_callback(nom_tache_datafile1, total=len(corr_to_upload))
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         futures = [executor.submit(process_datafile1, img) for img in corr_to_upload]
@@ -302,77 +403,102 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
             if datetime.datetime.now() > timelimit:
                 connexion(login, silex_API_Client)
                 timelimit = datetime.datetime.now() + datetime.timedelta(minutes=30)
-            
+
             try:
                 future.result()
-            except Exception as e :
+            except Exception as e:
                 logger.error(f"failed to upload image :{e} ")
                 if status_callback:
-                    status_callback("[bold yellow] [!] A datafile failed to upload, please check the logs for informations, continuing...[/bold yellow]")
+                    status_callback(
+                        "[bold yellow] [!] A datafile failed to upload, please check the logs for informations, continuing...[/bold yellow]"
+                    )
             if progress_callback:
-                progress_callback(nom_tache_datafile1,avance=1)
+                progress_callback(nom_tache_datafile1, avance=1)
 
-    if len(corr_to_upload)>0:
+    if len(corr_to_upload) > 0:
         if status_callback:
-            status_callback(f"[green][✓] Datafile1 upload complete! : {len(corr_to_upload)} uploads! [/green]")
-            logger.info(f"[green][✓] Datafile1 upload complete! {len(corr_to_upload)} uploads![/green]")
+            status_callback(
+                f"[green][✓] Datafile1 upload complete! : {len(corr_to_upload)} uploads! [/green]"
+            )
+            logger.info(
+                f"[green][✓] Datafile1 upload complete! {len(corr_to_upload)} uploads![/green]"
+            )
     else:
-        status_callback("[green][✓] All Datafiles 1 were already uploaded (or there was no datafiles1)[/green]")
-        logger.info("[green][✓] All Datafiles 1 were already uploaded (or there was no datafiles1) [/green]")
+        status_callback(
+            "[green][✓] All Datafiles 1 were already uploaded (or there was no datafiles1)[/green]"
+        )
+        logger.info(
+            "[green][✓] All Datafiles 1 were already uploaded (or there was no datafiles1) [/green]"
+        )
 
     # IMPORT DATAFILE 2 (OPTIONNEL)
     if has_datafile2 and provenance_datafile2:
         datafile1_uri_map = {
             (elts.target, elts._date): elts.uri
             for elts in dat_api.get_data_file_descriptions_by_search(
-                provenances=[provenance_datafile1], experiments=[exp_uri], page_size=100000
+                provenances=[provenance_datafile1],
+                experiments=[exp_uri],
+                page_size=100000,
             )["result"]
         }
 
-        mask_data = parse_excel_for_metadata(df_data, dict_datafile2, provenance_datafile2, "datafile2",timezone_exp)
+        mask_data = parse_excel_for_metadata(
+            df_data, dict_datafile2, provenance_datafile2, "datafile2", timezone_exp
+        )
         if status_callback:
             status_callback("[green][✓] datafile2 data parsing OK [/green]")
         logger.info("[green][✓] datafile2 data parsing OK [/green]")
 
         for img in mask_data.values():
             target = sci_obj_uri[img["Plant ID"]]
-            date = img["Date"].replace('+', '.000+')
-            uri_trouve = datafile1_uri_map.get((target,date))
+            date = img["Date"].replace("+", ".000+")
+            uri_trouve = datafile1_uri_map.get((target, date))
             img["Prov_Used"] = uri_trouve
 
-        existing_datafile2_keys = get_existing_datafiles(dat_api, provenance_datafile2, exp_uri)
+        existing_datafile2_keys = get_existing_datafiles(
+            dat_api, provenance_datafile2, exp_uri
+        )
         if status_callback:
             status_callback("[green][✓] Search for existing datafiles2 OK [/green]")
         logger.info("[green][✓] Search for existing datafiles2 OK [/green]")
 
         mask_to_upload = [
-            img for img in mask_data.values()
+            img
+            for img in mask_data.values()
             if (
-                sci_obj_uri[img["Plant ID"]], 
-                img["Date"][:-5] + ".000" + img["Date"][-5:], 
-                str(img.get("Angle")) if pd.notna(img.get("Angle")) else None, 
-                str(img.get("Round Order")) if pd.notna(img.get("Round Order")) else None
-            ) not in existing_datafile2_keys
+                sci_obj_uri[img["Plant ID"]],
+                img["Date"][:-5] + ".000" + img["Date"][-5:],
+                str(img.get("Angle")) if pd.notna(img.get("Angle")) else None,
+                str(img.get("Round Order"))
+                if pd.notna(img.get("Round Order"))
+                else None,
+            )
+            not in existing_datafile2_keys
         ]
 
         # # # TEST TEST TEST
         # toutes_datafile2_triees = sorted(mask_data.values(), key=lambda x: x["Path"])
-        
+
         # datafile2_test_subset = toutes_datafile2_triees[1210:1215]
 
         # mask_to_upload = [
         #     img for img in mask_data.values()
         #     if (
-        #         sci_obj_uri[img["Plant ID"]], 
-        #         img["Date"][:-5] + ".000" + img["Date"][-5:], 
-        #         str(img.get("Angle")) if pd.notna(img.get("Angle")) else None, 
+        #         sci_obj_uri[img["Plant ID"]],
+        #         img["Date"][:-5] + ".000" + img["Date"][-5:],
+        #         str(img.get("Angle")) if pd.notna(img.get("Angle")) else None,
         #         str(img.get("Round Order")) if pd.notna(img.get("Round Order")) else None
         #     ) not in existing_datafile2_keys
         # ]
         #  # # TEST TEST TEST
 
-        status_callback(f"[bold green]{len(mask_data) - len(mask_to_upload)} [cyan]Datafiles2 exists on[/cyan] {len(mask_data)}[cyan] total[/bold green]")
-        logger.info(f"[bold green]{len(mask_data) - len(mask_to_upload)} [cyan]Datafiles2 exists on[/cyan] {len(mask_data)}[cyan] total[/bold green]")
+        status_callback(
+            f"[bold green]{len(mask_data) - len(mask_to_upload)} [cyan]Datafiles2 exists on[/cyan] {len(mask_data)}[cyan] total[/bold green]"
+        )
+        logger.info(
+            f"[bold green]{len(mask_data) - len(mask_to_upload)} [cyan]Datafiles2 exists on[/cyan] {len(mask_data)}[cyan] total[/bold green]"
+        )
+
         def process_datafile2(img):
             round_order = img.get("Round Order")
             settings = {"Camera Angle": img.get("Angle")}
@@ -383,42 +509,64 @@ def execute_datafiles_upload(document_miappe,document_data, df_data, dict_datafi
                 "rdf_type": f"vocabulary:{rdf_type_2}",
                 "date": img["Date"],
                 "target": sci_obj_uri[img["Plant ID"]],
-                "metadata": {"Round Order": round_order, "Imported with": f"SIMPLE {__version__}"},
+                "metadata": {
+                    "Round Order": round_order,
+                    "Imported with": f"SIMPLE {__version__}",
+                },
                 "provenance": {
                     "uri": img["Prov"],
-                    "prov_used": [{"uri": img["Prov_Used"], "rdf_type": f"vocabulary:{rdf_type_1}"}] if img.get("Prov_Used") else [],
+                    "prov_used": [
+                        {
+                            "uri": img["Prov_Used"],
+                            "rdf_type": f"vocabulary:{rdf_type_1}",
+                        }
+                    ]
+                    if img.get("Prov_Used")
+                    else [],
                     "settings": settings,
-                    "experiments": [exp_uri]
-                }
+                    "experiments": [exp_uri],
+                },
             }
             dat_api.post_data_file(description=json.dumps(desc), file=img["Path"])
 
-        nom_tache_datafile2="[bold blue]Uploading datafiles 2...[/bold blue]"
+        nom_tache_datafile2 = "[bold blue]Uploading datafiles 2...[/bold blue]"
 
-        if progress_callback and len(mask_to_upload)>0:
-            progress_callback(nom_tache_datafile2,total=len(mask_to_upload))
+        if progress_callback and len(mask_to_upload) > 0:
+            progress_callback(nom_tache_datafile2, total=len(mask_to_upload))
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-            futures = [executor.submit(process_datafile2, img) for img in mask_to_upload]
+            futures = [
+                executor.submit(process_datafile2, img) for img in mask_to_upload
+            ]
             for future in concurrent.futures.as_completed(futures):
                 if datetime.datetime.now() > timelimit:
                     connexion(login, silex_API_Client)
                     timelimit = datetime.datetime.now() + datetime.timedelta(minutes=30)
                 try:
                     future.result()
-                except Exception as e :
+                except Exception as e:
                     logger.error(f"failed to upload image :{e} ")
                     if status_callback:
-                        status_callback("[bold yellow] [!] A datafile failed to upload, please check the logs for informations, continuing...[/bold yellow]")
-                    
+                        status_callback(
+                            "[bold yellow] [!] A datafile failed to upload, please check the logs for informations, continuing...[/bold yellow]"
+                        )
+
                 if progress_callback:
-                    progress_callback(nom_tache_datafile2,avance=1)
-            
-        if len(mask_to_upload)>0:
+                    progress_callback(nom_tache_datafile2, avance=1)
+
+        if len(mask_to_upload) > 0:
             if status_callback:
-                status_callback(f"[green][✓] Datafile 2 upload complete! : {len(mask_to_upload)} uploads! [/green]")
-                logger.info(f"[green][✓] Datafile 2 upload complete! {len(mask_to_upload)} uploads![/green]")
+                status_callback(
+                    f"[green][✓] Datafile 2 upload complete! : {len(mask_to_upload)} uploads! [/green]"
+                )
+                logger.info(
+                    f"[green][✓] Datafile 2 upload complete! {len(mask_to_upload)} uploads![/green]"
+                )
         else:
-            status_callback("[green][✓] All Datafiles 2 were already uploaded (or there was no datafiles1)[/green]")
-            logger.info("[green][✓] All Datafiles 2 were already uploaded (or there was no datafiles1) [/green]")
+            status_callback(
+                "[green][✓] All Datafiles 2 were already uploaded (or there was no datafiles1)[/green]"
+            )
+            logger.info(
+                "[green][✓] All Datafiles 2 were already uploaded (or there was no datafiles1) [/green]"
+            )
     return 1
