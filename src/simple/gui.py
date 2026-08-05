@@ -480,12 +480,85 @@ class SimpleGUI(QMainWindow):
         )
 
     def do_run_all(self):
-        self.do_create_experiment()
-        self.do_import_germplasm()
-        self.do_import_factor()
-        self.do_import_sci_obj()
-        self.do_import_datafiles()
-        self.do_import_data()
+        # 1. Handle all UI Pop-ups in the main thread first
+        self.repertoire_photos = QFileDialog.getExistingDirectory(self, "Select Photo Directory", self.wd_experience)
+        if not self.repertoire_photos: 
+            return
+
+        # Check for missing datafiles before locking up the UI
+        dict_datafile1, missing_datafile1, dict_datafile2, missing_datafile2, has_datafile2, df_data = check_for_datafiles(self.document_data, self.repertoire_photos)
+        
+        if missing_datafile1 or missing_datafile2:
+            reply = QMessageBox.question(
+                self, 
+                "Discrepancies found", 
+                "Datafiles are missing. Continue despite discrepancies?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            if reply == QMessageBox.StandardButton.No:
+                return
+
+        # 2. Create ONE master background task that runs everything sequentially
+        def master_task():
+            import pandas as pd # Ensure pandas is imported for the dataframe length check
+            
+            # --- 1. Experiment ---
+            self.gui_progress_signal.emit("Creating experiment", 0, 0)
+            create_experiment(self.document_miappe, self.silex_API_Client, status_callback=self._status_callback)
+            
+            # --- 2. Germplasm ---
+            self.gui_progress_signal.emit("Importing germplasms", 0, 0)
+            create_germplasm(self.document_miappe, self.silex_API_Client)
+            
+            # --- 3. Factors ---
+            self.gui_progress_signal.emit("Importing factors", 0, 0)
+            create_factor(self.document_miappe, self.silex_API_Client)
+            
+            # --- 4. Scientific Objects ---
+            sci_obj_uri, _ = create_sci_obj(
+                self.document_data, self.document_miappe, self.silex_API_Client, 
+                status_callback=self._status_callback
+            )
+            
+            # --- 5. Datafiles ---
+            self.gui_progress_signal.emit("Checking provenances", 0, 0)
+            prov_dict, datafile_provenance, missing_provs = get_provenances(self.document_data, self.document_miappe, self.silex_API_Client)
+            if missing_provs:
+                prov_dict, datafile_provenance, _ = get_provenances(self.document_data, self.document_miappe, self.silex_API_Client, create_default=True)
+            
+            cam_pos, plant_mask, _ = get_round_protocol_info(self.wd_experience, self.document_data)
+            
+            def gestion_barre_df(nom_tache, total=None, avance=0):
+                safe_total = total if total is not None else 0
+                self.gui_progress_signal.emit(nom_tache, avance, safe_total)
+
+            execute_datafiles_upload(
+                self.document_miappe, self.document_data, df_data, dict_datafile1, dict_datafile2, 
+                has_datafile2, prov_dict, datafile_provenance, sci_obj_uri, cam_pos, plant_mask, 
+                self.login_info, self.silex_API_Client, status_callback=self._status_callback, progress_callback=gestion_barre_df
+            )
+            
+            # --- 6. Tabular Data ---
+            morpho_info = data_mapping(self.document_data, self.document_miappe)
+            df_length = len(pd.read_excel(self.document_data))
+            total_operations = len(morpho_info) * df_length
+            
+            def afficher_progres(nom_variable, nb_lignes):
+                self.gui_progress_signal.emit(f"Adding to {nom_variable}", nb_lignes, total_operations)
+
+            create_data(
+                self.document_data, self.document_miappe, self.login_info, self.silex_API_Client,
+                morpho_info, prov_dict, datafile_provenance, sci_obj_uri, avancement_upload=afficher_progres
+            )
+
+        # 3. Fire up the single thread using the indeterminate loader we built earlier
+        self.with_progress(
+            "Starting batch import...", 
+            master_task, 
+            lambda r: QMessageBox.information(self, "Success", "All imports finished successfully!"),
+            indeterminate=True
+        )
 
 
 def main():
