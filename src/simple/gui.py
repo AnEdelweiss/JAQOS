@@ -1,10 +1,8 @@
+import logging
 import sys
 
-import logging
-from PyQt6.QtCore import pyqtSignal, QObject
-
 import opensilexClientToolsPython as silex
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QObject, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QApplication,
     QDialog,
@@ -36,12 +34,12 @@ from simple.datafile_import import (
 )
 from simple.erreurs import (
     AuthenticationError,
-    DataImportError,
     NetworkError,
     SimpleBaseException,
 )
 from simple.experiment import api_find_experiment_by_name, create_experiment
 from simple.systeme_logs import logger
+
 
 # 1. The Signal Emitter (Safely crosses threads)
 class LogEmitter(QObject):

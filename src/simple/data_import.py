@@ -441,7 +441,7 @@ def get_provenances(
 
     for suffix, config in datafile_provenance.items():
         if datafile_name == suffix:
-            for prov_name in datafile_provenance[suffix].values():
+            for prov_name in config.values():
                 if (
                     pd.isna(prov_name)
                     or prov_name == "RGBImage"

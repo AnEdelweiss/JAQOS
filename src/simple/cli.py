@@ -1,8 +1,8 @@
-import sys
 import logging
-from rich.logging import RichHandler
+import sys
 
 import opensilexClientToolsPython as silex
+from rich.logging import RichHandler
 from rich.panel import Panel
 from rich.progress import (
     BarColumn,
