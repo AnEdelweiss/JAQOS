@@ -52,11 +52,22 @@ class GUIConsoleHandler(logging.Handler):
     def __init__(self, emitter):
         super().__init__()
         self.emitter = emitter
+        self.setLevel(logging.INFO)
 
     def emit(self, record):
-        # Format the log message and emit it to the GUI
         msg = self.format(record)
-        self.emitter.log_signal.emit(msg)
+        
+        # Map log levels to specific colors
+        if record.levelno == logging.WARNING:
+            color = "#FFA500" # Orange
+        elif record.levelno >= logging.ERROR:
+            color = "#FF4C4C" # Red
+        else:
+            color = "#008000" # Light green (Standard INFO)
+
+        # Wrap the message in an HTML span tag
+        html_msg = f'<span style="color: {color};">{msg}</span>'
+        self.emitter.log_signal.emit(html_msg)
 
 class SimpleGUI(QMainWindow):
     def __init__(self):
@@ -120,7 +131,7 @@ class SimpleGUI(QMainWindow):
 
         # --- WIRE THE LOGGER TO THE CONSOLE ---
         self.log_emitter = LogEmitter()
-        self.log_emitter.log_signal.connect(self.console_output.appendPlainText)
+        self.log_emitter.log_signal.connect(self.console_output.appendHtml)
 
         self.gui_logger_handler = GUIConsoleHandler(self.log_emitter)
         self.gui_logger_handler.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
@@ -137,16 +148,21 @@ class SimpleGUI(QMainWindow):
             return
         
         host = next(key for key, value in INSTANCES.items() if value == host_display)
-        identifier, ok = QInputDialog.getText(self, "Login", "Identifier:")
-        if not ok:
-            return
-        password, ok = QInputDialog.getText(
-            self, "Login", "Password:", QLineEdit.EchoMode.Password
-        )
-        if not ok:
-            return
+        if host == "https://opensilex.org/sandbox/rest":
+            identifier="guest@opensilex.org"
+            password="guest"
+            self.login_info = {"host": host, "identifier": identifier, "password": password}
+        else:
+            identifier, ok = QInputDialog.getText(self, "Login", "Identifier:")
+            if not ok:
+                return
+            password, ok = QInputDialog.getText(
+                self, "Login", "Password:", QLineEdit.EchoMode.Password
+            )
+            if not ok:
+                return
 
-        self.login_info = {"host": host, "identifier": identifier, "password": password}
+            self.login_info = {"host": host, "identifier": identifier, "password": password}
 
         try:
             connexion(self.login_info, self.silex_API_Client)

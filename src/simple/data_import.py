@@ -22,7 +22,7 @@ def get_name_space(silex_API_Client):
         name_space.replace("'", "").replace("[", "").replace("]", "") + ":"
     )
     logger.info(
-        f"name space clean : {name_space_clean} & instance uri : {instance_uri}"
+        f"Name Space is : {name_space_clean} & instance uri is : {instance_uri}"
     )
     return name_space_clean, instance_uri
 
@@ -50,7 +50,8 @@ def create_factor(document_miappe, silex_API_Client):
     exp_api = silex.ExperimentsApi(silex_API_Client)
     exp_search = exp_api.search_experiments(name=name_exp)["result"]
     name_exp_uri = {name_exp: exp_search[0].uri}
-    logger.info(name_exp_uri)
+    experience_name, experience_uri = next(iter(name_exp_uri.items()))
+    logger.info(f"You are working on experiment : {experience_name} URI :{experience_uri} ")
     dico_factor = {}
 
     for row in list(dataframe.to_dict("records")):
@@ -98,11 +99,14 @@ def create_factor(document_miappe, silex_API_Client):
             )["result"]
             factors_uri[factor_name] = factor_search[0].uri
 
-    for fac_uri in factors_uri.values():
+    for fac_name,fac_uri in factors_uri.items():
         fac_get = factor_api.get_factor_levels(uri=fac_uri)["result"]
+        logger.info(f"Level : {fac_name}")
         for lvl in fac_get:
             factors_levels_uri[lvl.name] = lvl.uri
+            logger.info(f"Factor level : {lvl.name}")
 
+    logger.info("Factors have been found/created with sucess.")
     return factors_levels_uri, factors_uri
 
 
@@ -127,35 +131,44 @@ def create_germplasm(document_miappe, silex_API_Client):
         rdf_type = str(row["rdf_type"])
 
         if germ_name not in germplasms_uri:
-            # On verifie l'existence de l'éspèce si on est sur une ligne Variété
-            if germ_species not in species_uri and rdf_type != "vocabulary:Species":
-                spec_src = germplasm_api.search_germplasm(
-                    name=f"^{germ_species}$", rdf_type="vocabulary:Species"
-                )["result"]
-                if not spec_src:
-                    logger.error(
-                        f"The species {germ_species} associated with {germ_name} was not found... Please declare species before varieties and check for typos in the Miappe"
-                    )
-                    raise DataImportError(
-                        f"[bold red]\nPlease check if the species you associated with [cyan]{germ_name}[/cyan] in the miappe template is correct \n Tip : You have to declare all the species before the varieties"
-                    )
-                species_uri[germ_species] = spec_src[0].uri
-            # On check si notre variété/espèce existe, et si elle existe pas on la crée
-            germ_search = germplasm_api.search_germplasm(
-                name=f"^{germ_name}$", rdf_type=rdf_type
-            )["result"]
-            if not germ_search:
-                if rdf_type != "vocabulary:Species":
-                    row.pop("species", None)
-                    row["species"] = species_uri[germ_species]
-                row["metadata"] = {"Imported with": f"SIMPLE {__version__}"}
-                body = silex.GermplasmCreationDTO(**row)
-                germplasm_api.create_germplasm(body=body, check_only=False)
+            try:
+                # On verifie l'existence de l'éspèce si on est sur une ligne Variété
+                if germ_species not in species_uri and rdf_type != "vocabulary:Species":
+                    spec_src = germplasm_api.search_germplasm(
+                        name=f"^{germ_species}$", rdf_type="vocabulary:Species"
+                    )["result"]
+                    if not spec_src:
+                        logger.error(
+                            f"The species {germ_species} associated with {germ_name} was not found... Please declare species before varieties and check for typos in the Miappe"
+                        )
+                        raise DataImportError(
+                            f"[bold red]\nPlease check if the species you associated with [cyan]{germ_name}[/cyan] in the miappe template is correct \n Tip : You have to declare all the species before the varieties"
+                        )
+                    species_uri[germ_species] = spec_src[0].uri
+                # On check si notre variété/espèce existe, et si elle existe pas on la crée
                 germ_search = germplasm_api.search_germplasm(
                     name=f"^{germ_name}$", rdf_type=rdf_type
                 )["result"]
-            germplasms_uri[germ_name] = germ_search[0].uri
+                if not germ_search:
+                    if rdf_type != "vocabulary:Species":
+                        row.pop("species", None)
+                        row["species"] = species_uri[germ_species]
+                    row["metadata"] = {"Imported with": f"SIMPLE {__version__}"}
+                    body = silex.GermplasmCreationDTO(**row)
+                    germplasm_api.create_germplasm(body=body, check_only=False)
+                    germ_search = germplasm_api.search_germplasm(
+                        name=f"^{germ_name}$", rdf_type=rdf_type
+                    )["result"]
+                    logger.info(f"Germplasm : {germ_name} created with URI : {germ_search[0].uri}")
+                else:
+                    logger.info(f"Germplasm : {germ_name} found with URI : {germ_search[0].uri}")
+                germplasms_uri[germ_name] = germ_search[0].uri
+            except Exception as e :
+               logger.error(f"Creation of germplasm : '{germ_name}' Failed this may be caused by a duplicate uri, please check the MIAPPE 'germplasm' sheet, more infos in logs")
+               logger.debug(e)
+               raise DataImportError("Error during germplasm import")
 
+    logger.info("All germplasms have been found/created with sucess.")
     return germplasms_uri, species_uri
 
 
@@ -213,7 +226,8 @@ def create_sci_obj(
             f"[bold red]This experiment doesn't exist, please check if the name is correct : {name_exp}[/bold red]"
         )
     name_exp_uri = {name_exp: resultats[0].uri}
-    logger.info(name_exp_uri)
+    experience_name, experience_uri = next(iter(name_exp_uri.items()))
+    logger.info(f"You are working on experiment : {experience_name} URI :{experience_uri} ")
     # Récupérer un dictionnaire de facteurs levels pour cette experience
     api_response = silex.ExperimentsApi(silex_API_Client).get_available_factors(
         exp_search["result"][0].uri

@@ -7,7 +7,12 @@ from simple.systeme_logs import logger
 
 def api_find_experiment_by_name(silex_API_Client, name_exp):
     exp_api = silex.ExperimentsApi(silex_API_Client)
+    exp_data=None
     exp_data = exp_api.search_experiments(name=name_exp)
+    if exp_data["result"] :
+        logger.info(f"User looked for the experiment : {name_exp}. It exists.")
+    else:
+        logger.info(f"User looked for the experiment : {name_exp}. It does not exist.")
     return exp_data["result"]
 
 
@@ -87,7 +92,7 @@ def create_experiment(document_miappe, silex_API_Client, status_callback=None):
         for organisation in ls_Organisation:
             if organisation is None:
                 logger.warning(
-                    "[bold yellow]Organisation Missing From MIAPPE file experiment sheet[/bold yellow]"
+                    "Organisation Missing From MIAPPE file experiment sheet"
                 )
                 ls_Organisation = None
             else:
@@ -101,7 +106,7 @@ def create_experiment(document_miappe, silex_API_Client, status_callback=None):
                     ls_Organisation = list(Organisation_uri.values())
                 else:
                     logger.warning(
-                        f"[bold red] {organisation}: Unknown Organisation [/bold red]"
+                        f"{organisation}: Unknown Organisation "
                     )
                     ls_Organisation = None
 
@@ -109,7 +114,7 @@ def create_experiment(document_miappe, silex_API_Client, status_callback=None):
         for group in ls_Groups:
             if group is None:
                 logger.warning(
-                    "[bold yellow]Group Missing From MIAPPE file experiment sheet[/bold yellow]"
+                    "Group Missing From MIAPPE file experiment sheet"
                 )
                 ls_Groups = None
             else:
@@ -122,7 +127,7 @@ def create_experiment(document_miappe, silex_API_Client, status_callback=None):
                         )
                     ls_Groups = list(Groups_uri.values())
                 else:
-                    logger.warning(f"[bold red]{group}: Unknown Group[/bold red]")
+                    logger.warning(f"{group}: Unknown Group")
                     ls_Groups = None
         Projects_uri = {}
         for project in ls_Projects:

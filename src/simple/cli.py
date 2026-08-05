@@ -1,4 +1,6 @@
 import sys
+import logging
+from rich.logging import RichHandler
 
 import opensilexClientToolsPython as silex
 from rich.panel import Panel
@@ -63,7 +65,7 @@ def ui_find_experiment(silex_API_Client):
 
     if not exp_data:
         Prompt.ask(
-            "[bold red]No experiment with that name was found.([/bold red]\nPress Enter to go back to the main menu"
+            "[bold red]No experiment with that name were found.([/bold red]\nPress Enter to go back to the main menu"
         )
         return
 
@@ -468,6 +470,18 @@ def main():
     except NetworkError as e:
         console.print(f"[bold red]{e}[/bold red]")
         return
+    #Taking care of the display into the console, we want the user to see log.warning,error 
+    console_handler = RichHandler(
+        console=console, 
+        show_time=False, 
+        show_path=False, 
+        markup=True, 
+        rich_tracebacks=True
+    )
+    console_handler.setLevel(logging.WARNING) 
+    if not any(isinstance(h, RichHandler) for h in logger.handlers):
+        logger.addHandler(console_handler)
+
     console.print(BANNER)
     console.print(
         "[bold][green]______________________________________________________________________________________[/green][/bold]\n"

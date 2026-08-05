@@ -98,6 +98,7 @@ def connexion(login, silex_API_Client) -> bool:
         silex_API_Client.connect_to_opensilex_ws(
             **login
         )  # Connexion avec le login reçu via la CLI
+        logger.info(f"User Sucessfully connected to : {login["host"]}")
         return True
 
     except Exception as e:
