@@ -1,8 +1,8 @@
 import logging
 import sys
-
+import pandas as pd
 import opensilexClientToolsPython as silex
-from PyQt6.QtCore import QObject, Qt, pyqtSignal
+from PyQt6.QtCore import QObject, Qt, pyqtSignal,QThread
 from PyQt6.QtWidgets import (
     QApplication,
     QDialog,
@@ -45,6 +45,24 @@ from simple.systeme_logs import logger
 class LogEmitter(QObject):
     log_signal = pyqtSignal(str)
 
+class WorkerThread(QThread):
+    # These signals safely carry our results back to the main GUI thread
+    finished_success = pyqtSignal(object) 
+    finished_error = pyqtSignal(Exception)
+
+    def __init__(self, task_func):
+        super().__init__()
+        self.task_func = task_func
+
+    def run(self):
+        try:
+            # Execute the heavy backend function
+            result = self.task_func()
+            self.finished_success.emit(result)
+        except Exception as e:
+            # If anything crashes in the backend, catch it and tell the GUI
+            self.finished_error.emit(e)
+
 # 2. The Custom Logging Handler
 class GUIConsoleHandler(logging.Handler):
     def __init__(self, emitter):
@@ -68,10 +86,13 @@ class GUIConsoleHandler(logging.Handler):
         self.emitter.log_signal.emit(html_msg)
 
 class SimpleGUI(QMainWindow):
+
+    gui_progress_signal = pyqtSignal(str, int, int)
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("SIMPLE GUI")
-        self.setMinimumSize(400, 300)
+        self.setMinimumSize(500, 500)
 
         # INITIALISATION DES VARIABLES et de l'api ~
         self.silex_API_Client = silex.ApiClient(verbose=False)
@@ -82,6 +103,23 @@ class SimpleGUI(QMainWindow):
         self.repertoire_photos = None
 
         self.init_ui()
+        self.gui_progress_signal.connect(self._safe_update_progress)
+        self.current_progress = 0
+
+    def _safe_update_progress(self, label_text, advance=0, total=0):
+        """This function always runs on the main thread and safely updates the UI."""
+        if not hasattr(self, 'progress') or self.progress.wasCanceled():
+            return
+
+        # Only reset the progress and update the maximum if a NEW total is provided.
+        # This prevents the bar from resetting to 0 if the backend repeatedly sends the same total.
+        if total > 0 and self.progress.maximum() != total:
+            self.progress.setMaximum(total)
+            self.current_progress = 0 # Reset only when the total changes
+            
+        self.current_progress += advance
+        self.progress.setValue(self.current_progress)
+        self.progress.setLabelText(f"{label_text}...")
 
     def closeEvent(self, event):
         # Clean up the logger handler when the app closes
@@ -124,7 +162,13 @@ class SimpleGUI(QMainWindow):
         self.console_output = QPlainTextEdit()
         self.console_output.setReadOnly(True)
         # Optional: set a darker background to make it look like a terminal
-        self.console_output.setStyleSheet("background-color: #1e1e1e; color: #d4d4d4; font-family: monospace;")
+        self.console_output.setStyleSheet(
+            "background-color: #1e1e1e; "
+            "color: #d4d4d4; "
+            "font-family: monospace; "
+            "font-size: 14px; "
+            "font-weight: bold;"
+        )
         layout.addWidget(self.console_output)
 
         # --- WIRE THE LOGGER TO THE CONSOLE ---
@@ -242,35 +286,47 @@ class SimpleGUI(QMainWindow):
             self, "Reset", "Working directory and selected files have been reset."
         )
     
-    def with_progress(self, message, func, callback=None):
-        self.progress = QProgressDialog(message, None, 0, 0, self)
+    def with_progress(self, message, task_func, on_success_callback=None, indeterminate=False):
+        # 1. Setup the beautiful, non-freezing Progress Dialog
+        self.progress = QProgressDialog(message, None, 0, 100, self) 
         self.progress.setWindowTitle("Please wait")
         self.progress.setWindowModality(Qt.WindowModality.WindowModal)
-        self.progress.setCancelButton(None)
-        self.progress.setMinimumDuration(0)
-        self.progress.show()
+        self.progress.setAutoClose(False) 
         
-        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
-        QApplication.processEvents() 
+        # Explicitly reset the internal progress tracker for each new task
+        self.current_progress = 0 
+        
+        if indeterminate:
+            # Setting max and min to 0 triggers the infinite loading animation
+            self.progress.setMaximum(0)
+            self.progress.setMinimum(0)
+        else:
+            self.progress.setValue(0)
+            
+        self.progress.show()
 
-        try:
-            result = func()
-            if callback:
-                callback(result)
-        except SimpleBaseException as e:
-            logger.warning(f"Action interrupted : {e}")
-            QMessageBox.warning(self, "Warning", str(e))
-        except Exception as e:
-            logger.exception(f"Error: {e}")
-            QMessageBox.critical(self, "Error", f"An Unhandled Error was raised: {e}")
-        finally:
+        # 2. Create the background worker
+        self.worker = WorkerThread(task_func)
+
+        # 3. Connect the success signal
+        if on_success_callback:
+            # When the worker finishes successfully, close the bar and run the callback
+            self.worker.finished_success.connect(self.progress.close)
+            self.worker.finished_success.connect(on_success_callback)
+
+        # 4. Connect the error signal (Crucial: prevents silent crashes!)
+        def handle_error(e):
             self.progress.close()
-            QApplication.restoreOverrideCursor()
+            logger.error(f"Task Failed: {str(e)}")
+            QMessageBox.critical(self, "Error", f"An error occurred during import:\n{str(e)}")
+            
+        self.worker.finished_error.connect(handle_error)
+
+        # 5. Start the thread! The GUI remains 100% responsive.
+        self.worker.start()
 
     def _status_callback(self, message):
-        # We can just use the logger, which will now automatically route to the GUI!
         logger.info(message)
-        QApplication.processEvents()
 
     def do_create_experiment(self):
         def task():
@@ -282,19 +338,25 @@ class SimpleGUI(QMainWindow):
 
         def finish(results):
             # affichage final
-            msg = "\n".join([f"experiment created or found : {nom}: {uri}" for nom, uri in results.items()])
+            msg = "\n".join([f"experiment {nom} created or found with uri: {uri}" for nom, uri in results.items()])
             QMessageBox.information(self, "Experiment creater or found", msg)
 
-        self.with_progress("Processing experiment data...", task, finish)
+        self.with_progress(
+            "Creating/fetching experiment...",
+            task,
+            lambda r: QMessageBox.information(self, "Success", "Experiment imported/found."),
+            indeterminate=True
+        )
 
     def do_import_germplasm(self):
         def task():
             return create_germplasm(self.document_miappe, self.silex_API_Client)
 
         self.with_progress(
-            "Importing germplasms...",
+            "Creating/fetching germplasms...",
             task,
-            lambda r: QMessageBox.information(self, "Success", "Germplasms imported."),
+            lambda r: QMessageBox.information(self, "Success", "Germplasms imported/found."),
+            indeterminate=True
         )
 
     def do_import_factor(self):
@@ -302,9 +364,10 @@ class SimpleGUI(QMainWindow):
             return create_factor(self.document_miappe, self.silex_API_Client)
 
         self.with_progress(
-            "Importing factors...",
+            "Creating/fetching factors...",
             task,
-            lambda r: QMessageBox.information(self, "Success", "Factors imported."),
+            lambda r: QMessageBox.information(self, "Success", "Factors imported/found."),
+            indeterminate=True 
         )
 
     def do_import_sci_obj(self):
@@ -322,88 +385,80 @@ class SimpleGUI(QMainWindow):
             QMessageBox.information(
                 self, "Scientific Objects", f"{found} scientific objects found and {created_sci_obj} created."
             )
-
-        self.with_progress("Importing scientific objects...", task, finish)
+        self.with_progress(
+            "Creating/fetching factors...",
+            task,
+            finish,
+            indeterminate=True,
+        )
 
     def do_import_datafiles(self):
-        # on choisit le dossier photo ici
         self.repertoire_photos = QFileDialog.getExistingDirectory(self, "Select Photo Directory", self.wd_experience)
         if not self.repertoire_photos: return
 
+        # 1. UI interaction must happen in the main thread before starting the background task
+        dict_datafile1, missing_datafile1, dict_datafile2, missing_datafile2, has_datafile2, df_data = check_for_datafiles(self.document_data, self.repertoire_photos)
+        
+        if missing_datafile1 or missing_datafile2:
+            logger.warning(f"{missing_datafile1} & {missing_datafile2}")
+            reply = QMessageBox.question(
+                self, 
+                "Discrepancies found", 
+                "Datafiles are missing. Continue despite discrepancies? The import may fail.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            if reply == QMessageBox.StandardButton.No:
+                return
+
         def task():
-            # taking care of provenances
             prov_dict, datafile_provenance, missing_provs = get_provenances(self.document_data, self.document_miappe, self.silex_API_Client)
             if missing_provs:
                 prov_dict, datafile_provenance, _ = get_provenances(self.document_data, self.document_miappe, self.silex_API_Client, create_default=True)
             
-            # getting scientific object uris etc...
             sci_obj_uri, _ = create_sci_obj(self.document_data, self.document_miappe, self.silex_API_Client)
             
-            # getting cam_pos and plant_mask
             cam_pos, plant_mask, protocol_found = get_round_protocol_info(self.wd_experience, self.document_data)
             if not protocol_found:
                  logger.warning("PlantMask and Camera Position were not found")
-            
-            # on compare les datafiles et ceux données dans les données tabulaires
-            dict_datafile1, missing_datafile1, dict_datafile2, missing_datafile2, has_datafile2, df_data = check_for_datafiles(self.document_data, self.repertoire_photos)
-            
-            if missing_datafile1 or missing_datafile2:
-                logger.warning(f"{missing_datafile1} & {missing_datafile2}")
-                reply = QMessageBox.question(
-                    self, 
-                    "Discrepancies found", 
-                    "Datafiles are missing. Continue despite discrepancies? The import may fail.",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                    QMessageBox.StandardButton.No
-                )
-                if reply == QMessageBox.StandardButton.No:
-                    raise SimpleBaseException("User cancelled action after database discrepancies were found.")
 
-            self.current_progress = 0
+            # 2. Use the thread-safe signals for progress
+            def afficher_statut(mess):
+                logger.info(mess)
 
-            def gui_progress(nom_tache, total=None, avance=0):
-                if total:
-                    self.progress.setMaximum(total)
-                
-                self.current_progress += avance
-                self.progress.setValue(self.current_progress)
-                self.progress.setLabelText(f"{nom_tache}...")
-                QApplication.processEvents()
+            def gestion_barre(nom_tache, total=None, avance=0):
+                safe_total = total if total is not None else 0
+                self.gui_progress_signal.emit(nom_tache, avance, safe_total)
 
-            # enfin on téléverse :
             execute_datafiles_upload(
                 self.document_miappe, self.document_data, df_data, dict_datafile1, dict_datafile2, 
                 has_datafile2, prov_dict, datafile_provenance, sci_obj_uri, cam_pos, plant_mask, 
-                self.login_info, self.silex_API_Client, status_callback=self._status_callback, progress_callback=gui_progress
+                self.login_info, self.silex_API_Client, status_callback=afficher_statut, progress_callback=gestion_barre
             )
 
-        self.with_progress("Importing datafiles...", task, lambda r: QMessageBox.information(self, "Success", "Datafiles imported or found sucessfully."))
+        # 3. Use a lambda for the missing success_callback
+        self.with_progress(
+            "Importing datafiles...", 
+            task, 
+            lambda r: QMessageBox.information(self, "Success", "Datafiles imported successfully.")
+        )
 
     def do_import_data(self):
         def task():
-            # on apelle data_mapping pour faire le lien noms colonnes données tabulaires -> variables phis
             morpho_info = data_mapping(self.document_data, self.document_miappe)
 
-            # on s'occupe des provenances et du retour console s'il en manque etc...
-            prov_dict, datafile_provenance, missing_provs = get_provenances(
-                self.document_data, self.document_miappe, self.silex_API_Client
-            )
+            prov_dict, datafile_provenance, missing_provs = get_provenances(self.document_data, self.document_miappe, self.silex_API_Client)
             if missing_provs:
-                prov_dict, datafile_provenance, _ = get_provenances(
-                    self.document_data,
-                    self.document_miappe,
-                    self.silex_API_Client,
-                    create_default=True,
-                )
+                prov_dict, datafile_provenance, _ = get_provenances(self.document_data, self.document_miappe, self.silex_API_Client, create_default=True)
 
-            # on récupère le dictionnaire d'objets scientifiques
-            sci_obj_uri, _ = create_sci_obj(
-                self.document_data, self.document_miappe, self.silex_API_Client
-            )
+            sci_obj_uri, _ = create_sci_obj(self.document_data, self.document_miappe, self.silex_API_Client)
+            # Calculate the total upfront (number of variables * number of rows)
+            df_length = len(pd.read_excel(self.document_data))
+            total_operations = len(morpho_info) * df_length
 
-            # on gère l'affichage des progression d'importation de données
             def afficher_progres(nom_variable, nb_lignes):
-                self._status_callback(f"Added {nb_lignes} to {nom_variable}")
+                # Pass the calculated total so the UI knows how to scale
+                self.gui_progress_signal.emit(f"Adding to {nom_variable}", nb_lignes, total_operations)
 
             create_data(
                 self.document_data,
@@ -416,13 +471,12 @@ class SimpleGUI(QMainWindow):
                 sci_obj_uri,
                 avancement_upload=afficher_progres,
             )
-
+        
+        # 3. Use a lambda for the missing success_callback
         self.with_progress(
-            "Importing tabular data...",
-            task,
-            lambda r: QMessageBox.information(
-                self, "Success", "Data imported or found successfully."
-            ),
+            "Importing tabular data...", 
+            task, 
+            lambda r: QMessageBox.information(self, "Success", "Tabular data imported successfully.")
         )
 
     def do_run_all(self):

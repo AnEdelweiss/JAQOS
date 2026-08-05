@@ -564,9 +564,9 @@ def execute_datafiles_upload(
                 )
         else:
             status_callback(
-                "[green][✓] All Datafiles 2 were already uploaded (or there was no datafiles1)[/green]"
+                "[green][✓] All Datafiles 2 were already uploaded (or there was no datafiles2)[/green]"
             )
             logger.info(
-                "[green][✓] All Datafiles 2 were already uploaded (or there was no datafiles1) [/green]"
+                "[green][✓] All Datafiles 2 were already uploaded (or there was no datafiles2) [/green]"
             )
     return 1
