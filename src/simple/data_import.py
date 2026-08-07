@@ -150,8 +150,8 @@ def create_germplasm(document_miappe, silex_API_Client):
                     name=f"^{germ_name}$", rdf_type=rdf_type
                 )["result"]
                 if not germ_search:
+                    row.pop("species", None)
                     if rdf_type != "vocabulary:Species":
-                        row.pop("species", None)
                         row["species"] = species_uri[germ_species]
                     row["metadata"] = {"Imported with": f"SIMPLE {__version__}"}
                     body = silex.GermplasmCreationDTO(**row)
