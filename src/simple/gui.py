@@ -1,8 +1,11 @@
 import logging
+import re
 import sys
-import pandas as pd
+
 import opensilexClientToolsPython as silex
-from PyQt6.QtCore import QObject, Qt, pyqtSignal,QThread
+import pandas as pd
+from PyQt6.QtCore import QObject, Qt, QThread, pyqtSignal
+from PyQt6.QtGui import QTextCursor
 from PyQt6.QtWidgets import (
     QApplication,
     QDialog,
@@ -35,7 +38,6 @@ from simple.datafile_import import (
 from simple.erreurs import (
     AuthenticationError,
     NetworkError,
-    SimpleBaseException,
 )
 from simple.experiment import api_find_experiment_by_name, create_experiment
 from simple.systeme_logs import logger
@@ -43,7 +45,7 @@ from simple.systeme_logs import logger
 
 # 1. The Signal Emitter (Safely crosses threads)
 class LogEmitter(QObject):
-    log_signal = pyqtSignal(str)
+    log_signal = pyqtSignal(str, str)
 
 class WorkerThread(QThread):
     # These signals safely carry our results back to the main GUI thread
@@ -68,22 +70,25 @@ class GUIConsoleHandler(logging.Handler):
     def __init__(self, emitter):
         super().__init__()
         self.emitter = emitter
-        self.setLevel(logging.INFO)
+        self.setLevel(logging.INFO) # <-- Back to INFO!
 
     def emit(self, record):
         msg = self.format(record)
         
-        # Map log levels to specific colors
+        # Strip out the CLI-specific rich tags (like [green], [/bold cyan]) but keep [✓]
+        clean_msg = re.sub(r'\[/?(?:bold\s)?(?:green|red|cyan|yellow|blue|magenta|white)\]', '', msg)
+        
         if record.levelno == logging.WARNING:
-            color = "#FFA500" # Orange
+            color = "#f29d00" 
         elif record.levelno >= logging.ERROR:
-            color = "#FF4C4C" # Red
+            color = "#ab2d2d" 
         else:
-            color = "#008000" # Light green (Standard INFO)
+            color = "#195819" 
 
-        # Wrap the message in an HTML span tag
-        html_msg = f'<span style="color: {color};">{msg}</span>'
-        self.emitter.log_signal.emit(html_msg)
+        html_msg = f'<span style="color: {color};">{clean_msg}</span>'
+        
+        # Send both the HTML for display and the clean text for our deduplicator
+        self.emitter.log_signal.emit(html_msg, clean_msg.strip())
 
 class SimpleGUI(QMainWindow):
 
@@ -106,20 +111,32 @@ class SimpleGUI(QMainWindow):
         self.gui_progress_signal.connect(self._safe_update_progress)
         self.current_progress = 0
 
+    def _safe_append_console(self, html_msg, clean_msg):
+        # If the incoming text matches the last printed text, ignore it.
+        self.console_output.moveCursor(QTextCursor.MoveOperation.End)
+        if clean_msg == self.last_console_msg:
+            return 
+            
+        self.last_console_msg = clean_msg
+        self.console_output.appendHtml(html_msg)
+
     def _safe_update_progress(self, label_text, advance=0, total=0):
         """This function always runs on the main thread and safely updates the UI."""
         if not hasattr(self, 'progress') or self.progress.wasCanceled():
             return
 
+        clean_label = re.sub(r'\[/?(?:bold\s)?(?:green|red|cyan|yellow|blue|magenta|white)\]', '', label_text)
         # Only reset the progress and update the maximum if a NEW total is provided.
         # This prevents the bar from resetting to 0 if the backend repeatedly sends the same total.
-        if total > 0 and self.progress.maximum() != total:
+        if total > 0 and (self.progress.maximum() != total or self.current_progress >= self.progress.maximum()):
             self.progress.setMaximum(total)
             self.current_progress = 0 # Reset only when the total changes
             
         self.current_progress += advance
         self.progress.setValue(self.current_progress)
-        self.progress.setLabelText(f"{label_text}...")
+        
+        # 3. Apply the clean label to the UI
+        self.progress.setLabelText(f"{clean_label}...")
 
     def closeEvent(self, event):
         # Clean up the logger handler when the app closes
@@ -163,17 +180,18 @@ class SimpleGUI(QMainWindow):
         self.console_output.setReadOnly(True)
         # Optional: set a darker background to make it look like a terminal
         self.console_output.setStyleSheet(
-            "background-color: #1e1e1e; "
+            "background-color: #d4d4d4; "
             "color: #d4d4d4; "
             "font-family: monospace; "
-            "font-size: 14px; "
+            "font-size: 13px; "
             "font-weight: bold;"
         )
         layout.addWidget(self.console_output)
 
         # --- WIRE THE LOGGER TO THE CONSOLE ---
         self.log_emitter = LogEmitter()
-        self.log_emitter.log_signal.connect(self.console_output.appendHtml)
+        self.last_console_msg = "" # <-- ADD THIS to remember the last message
+        self.log_emitter.log_signal.connect(self._safe_append_console)
 
         self.gui_logger_handler = GUIConsoleHandler(self.log_emitter)
         self.gui_logger_handler.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
@@ -317,8 +335,8 @@ class SimpleGUI(QMainWindow):
         # 4. Connect the error signal (Crucial: prevents silent crashes!)
         def handle_error(e):
             self.progress.close()
-            logger.error(f"Task Failed: {str(e)}")
-            QMessageBox.critical(self, "Error", f"An error occurred during import:\n{str(e)}")
+            logger.error(f"Task Failed: {e!s}")
+            QMessageBox.critical(self, "Error", f"An error occurred during import:\n{e!s}")
             
         self.worker.finished_error.connect(handle_error)
 
@@ -326,7 +344,12 @@ class SimpleGUI(QMainWindow):
         self.worker.start()
 
     def _status_callback(self, message):
-        logger.info(message)
+        import re
+        # Clean the tags here as well
+        clean_msg = re.sub(r'\[/?(?:bold\s)?(?:green|red|cyan|yellow|blue|magenta|white)\]', '', message)
+        
+        html_msg = f'<span style="color: #008000;">{clean_msg}</span>'
+        self.log_emitter.log_signal.emit(html_msg, clean_msg.strip())
 
     def do_create_experiment(self):
         def task():
@@ -386,7 +409,7 @@ class SimpleGUI(QMainWindow):
                 self, "Scientific Objects", f"{found} scientific objects found and {created_sci_obj} created."
             )
         self.with_progress(
-            "Creating/fetching factors...",
+            "Creating/fetching Scientific objects...",
             task,
             finish,
             indeterminate=True,
@@ -501,7 +524,7 @@ class SimpleGUI(QMainWindow):
 
         # 2. Create ONE master background task that runs everything sequentially
         def master_task():
-            import pandas as pd # Ensure pandas is imported for the dataframe length check
+            import pandas as pd  # Ensure pandas is imported for the dataframe length check
             
             # --- 1. Experiment ---
             self.gui_progress_signal.emit("Creating experiment", 0, 0)
