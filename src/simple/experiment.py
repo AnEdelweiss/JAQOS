@@ -24,6 +24,10 @@ def create_experiment(document_miappe, silex_API_Client, status_callback=None):
         axis=1,
         inplace=True,
     )
+
+    dataframe["start_date"] = pd.to_datetime(dataframe["start_date"]).dt.strftime("%Y-%m-%d")
+    dataframe["end_date"] = pd.to_datetime(dataframe["end_date"]).dt.strftime("%Y-%m-%d")
+    
     records = dataframe.where(pd.notnull(dataframe), None).to_dict("records")
 
     Exp_Api = silex.ExperimentsApi(silex_API_Client)
@@ -32,7 +36,6 @@ def create_experiment(document_miappe, silex_API_Client, status_callback=None):
     Proj_Api = silex.ProjectsApi(silex_API_Client)
 
     NameExp_uri = {}
-
     for row_dict in records:
         NameExp_uri = {}
 
@@ -41,7 +44,7 @@ def create_experiment(document_miappe, silex_API_Client, status_callback=None):
             val = row_dict.get(key)
             return [x.strip() for x in str(val).split(",")] if val is not None else []
 
-        # get the names of everythng for the experiment
+        # get the info of everythng for the experiment
         NameExp = row_dict.get("name")
         StartExp = row_dict.get("start_date")
         EndExp = row_dict.get("end_date")
@@ -68,7 +71,6 @@ def create_experiment(document_miappe, silex_API_Client, status_callback=None):
             )
         if not EndExp:
             logger.warning("Ending Date Missing From MIAPPE file experiment sheet")
-
         if status_callback:
             status_callback(
                 f"[bold green]Start Date:[/bold green] [bold cyan]{StartExp}"
