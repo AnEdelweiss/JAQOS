@@ -386,7 +386,7 @@ def execute_datafiles_upload(
                             "settings": settings_dict,
                             "experiments": [exp_uri],
                         },
-                        relative_path="" + os.path.basename(img["Path"]),
+                        relative_path="datafile/" + os.path.basename(img["Path"]),
                     )
                 ]
             )

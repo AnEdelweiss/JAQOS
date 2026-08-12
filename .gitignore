@@ -12,5 +12,6 @@ toolbox/
 Documentation_WIP.md
 .coverage
 htmlcov
+documentation
 # Virtual environments
 .venv
