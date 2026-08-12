@@ -182,21 +182,20 @@ def create_sci_obj(
         axis=1,
         inplace=True,
     )
-    name_exp = dataframe["name"].dropna().iloc[0]
-    start_exp = (
-        dataframe["start_date"].dropna().iloc[0]
-        if "start_date" in dataframe.columns
-        and not pd.isna(dataframe["start_date"].dropna().iloc[0])
-        else None
-    )
-    end_exp = (
-        dataframe["end_date"].dropna().iloc[0]
-        if "end_date" in dataframe.columns
-        and not pd.isna(dataframe["end_date"].dropna().iloc[0])
-        else None
-    )
-    bio_mat_type = dataframe["scientific_object_type"].dropna().iloc[0]
-    bio_mat_type = list(map(str.strip, bio_mat_type.split(",")))
+    if "start_date" in dataframe.columns:
+        dataframe["start_date"] = pd.to_datetime(dataframe["start_date"]).dt.strftime("%Y-%m-%d")
+    if "end_date" in dataframe.columns:
+        dataframe["end_date"] = pd.to_datetime(dataframe["end_date"]).dt.strftime("%Y-%m-%d")
+
+    records = dataframe.where(pd.notnull(dataframe), None).to_dict("records")
+    row = records[0] if records else {}
+
+    name_exp = row.get("name")
+    start_exp = row.get("start_date")
+    end_exp = row.get("end_date")
+    
+    bio_mat_raw = row.get("scientific_object_type")
+    bio_mat_type = [x.strip() for x in str(bio_mat_raw).split(",")] if bio_mat_raw else []
 
     df_factors = pd.read_excel(document_miappe, sheet_name="factors", header=1)
     df_factors.drop(
