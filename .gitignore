@@ -13,5 +13,7 @@ Documentation_WIP.md
 .coverage
 htmlcov
 documentation
+.ruff_cache
+.pytest_cache
 # Virtual environments
 .venv
