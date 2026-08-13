@@ -1,114 +1,226 @@
 {"0": {
-    "doc": "Home",
+    "doc": "Importing data with the CLI",
+    "title": "Importing data with the CLI",
+    "content": " ",
+    "url": "/cli.html",
+    
+    "relUrl": "/cli.html"
+  },"1": {
+    "doc": "Data files sheet",
+    "title": "data files sheet :",
+    "content": "This sheet is crucial when importing datafiles (Images/archives…). You can find help regarding some important columns below : . | dataFileLink : refers to the exact name of the tabular data file that will be linked to the datafiles your are importing. With the extension. | dataFileDesc : can be a description, the number of parameters in this tabular data file etc… | Tabular Data Provenance : If there is no provenances yet for your instance/the data you want to upload; you have to create a provenance manually on your phis instance when importing data and datafiles. If there is one, simply put the exact name of the provenance to link the tabular data to it. | Datafiles1 Provenance and Datafiles2 Provenance : With SIMPLE you can upload two sets of datafiles linked together, this canbe the raw image and the derived image. If you only have one set of datafile, just fill what is related to the first set of datafiles and leave the reste blank. Same instructions as Tabular Data Provenance but regarding the datafiles (Images/Archives) uploaded, please use/create another provenance specific for images. | datafile1_rdf_type and datafile1_rdf_type : you currently have the choice between RGBImage and Archive. Warning : this is case sensitive. If you are importing images, use RGBImages… | . [example of a correctly filled sheet] . ",
+    "url": "/miappe/datafiles.html#data-files-sheet-",
+    
+    "relUrl": "/miappe/datafiles.html#data-files-sheet-"
+  },"2": {
+    "doc": "Data files sheet",
+    "title": "Data files sheet",
+    "content": " ",
+    "url": "/miappe/datafiles.html",
+    
+    "relUrl": "/miappe/datafiles.html"
+  },"3": {
+    "doc": "Experiment sheet",
+    "title": "Experiment sheet :",
+    "content": "The experiment sheet contains crucial information about your experiment. Fill it carefully. You can find help regarding some important columns below : . | name : How your experiment is named, how it will be searched and displayed in PHIS. | start_date and end_date : needs to follow this template : “yyyy-mm-dd”. | organisations : need to be created manually if they don’t already exist on your instance and are separated by commas | experiment_timezone : Needs to be filled following the timezone standards “Europe/***”, if left blank, it will default to UTC. This is also used when importing data and datafiles. | facilities : same instructions as organisations. | funding : same instructions as organisations. | projects : name of the project the experiment is part of (cf project sheet ‘name’) | groups : same instructions as organisations. | scientific_object_type : must be part of the rdf phis vocabulary. Has only been tested for ‘Plant’ so far… Other types may be ‘Plot’, ‘seed’, ‘leaf’… | . [example of a correctly filled sheet] . ",
+    "url": "/miappe/experiment.html#experiment-sheet-",
+    
+    "relUrl": "/miappe/experiment.html#experiment-sheet-"
+  },"4": {
+    "doc": "Experiment sheet",
+    "title": "Experiment sheet",
+    "content": " ",
+    "url": "/miappe/experiment.html",
+    
+    "relUrl": "/miappe/experiment.html"
+  },"5": {
+    "doc": "Experiment folder structure",
+    "title": "The experiment structure.",
+    "content": "Each experiment should have a dedicated folder, the filled miappe template for the experiment, the tabular data, the datafiles you would like to upload should all be inside this folder like so : . exp_database/ │ ├── experiment_1/ │ ├── tabular_data_file_RGB1.xlsx │ ├── tabular_data_file_archives.xlsx │ ├── Miappe_template.xlsx │ ├── 00-RoundProtocol/ (optional) │ │ └── Round_protocol_files.txt │ ├── output/ │ │ └── miappe_template_filled.xlsx │ ├── Archives_folder/ (optional) │ │ └── archive1.tar │ │ └── archive2.tar │ └── archive....tar │ └── Image_folder/ (optional) │ └── image1.png │ └── image2.png │ └── image...png ├── experiment_2/ ├── experiment_3/ └── experiment_.../ . ",
+    "url": "/experiment_folder.html#the-experiment-structure",
+    
+    "relUrl": "/experiment_folder.html#the-experiment-structure"
+  },"6": {
+    "doc": "Experiment folder structure",
+    "title": "Experiment folder structure",
+    "content": " ",
+    "url": "/experiment_folder.html",
+    
+    "relUrl": "/experiment_folder.html"
+  },"7": {
+    "doc": "Factors sheet",
+    "title": "Factors sheet :",
+    "content": "This sheet is also very important when creating the factors related to our experiment. You can find help regarding some important columns below : . | factor name will be used to look for factors in your tabular data file when creating scientific objects for example, this means the factor name has to exactly match the name of the column used to give the factors for each row in your tabular datafile. | factor description : can be used to describe the factors | factor levels names are used in the same way, this means you have to exactly match the factor levels (low light, high light, water stress 80, water stress 20) or there will be errors. You cannot name your factor levels using certain symbols (PHIS safeguards). Forbiden symbols include but are not limited to - , +, /, %, * Math symbols… | factor_level_desc : can be used to describe in details each factor levels : | . Below is an example of good match between factors and factor levels in the MIAPPE and the Tabular data : . [IMAGE] . | If your factors look like this, please separate them using the text to column option on your favorite spreadsheet program. | Here, we can see the name on the first row doesn’t exactly match the data. The same problem can be seen on the factor levels. | Here, we can see that the factor level names contain forbidden characters, this will not work. | . [IMAGE] . ",
+    "url": "/miappe/factors.html#factors-sheet-",
+    
+    "relUrl": "/miappe/factors.html#factors-sheet-"
+  },"8": {
+    "doc": "Factors sheet",
+    "title": "Factors sheet",
+    "content": " ",
+    "url": "/miappe/factors.html",
+    
+    "relUrl": "/miappe/factors.html"
+  },"9": {
+    "doc": "Germplasm sheet",
+    "title": "Germplasm sheet :",
+    "content": "The germplasm sheet is also especially important, this is where every germplasm ( variety and species) will be declared. You can find help regarding some important columns below : . | name : is the name of the germplasm, how it will be looked up, and displayed, if the germplasm is already on your phis instance, please be sure that there is no typo and that the names matches exactly. If not, a new germplasm will be created, thus leading to duplicate data and issues… | rdf_type : you currently have the choice between Species and Varieties (vocabulary:Species or vocabulary:Variety( Warning : this is case sensitive )). Please declare all the species that will be used by the varieties before declaring varieties. Following the example below: | . [IMAGE] . | uri : You can put the external uri of the germplasm here. If left blank, it will create a default uri; this is not recommended. | species : If the germplasm is a variety, you can put the name of the species it belongs to in this column. If it is a species, you can leave this column blank. | . [example of a correctly filled sheet] . Concerning the other columns : They can be filled using the Read me sheet of the MIAPPE file, notice that they are colored in green, and thus are not mandatory. Please fill out as much information as you have on the germplasms. ",
+    "url": "/miappe/germplasm.html#germplasm-sheet-",
+    
+    "relUrl": "/miappe/germplasm.html#germplasm-sheet-"
+  },"10": {
+    "doc": "Germplasm sheet",
+    "title": "Germplasm sheet",
+    "content": " ",
+    "url": "/miappe/germplasm.html",
+    
+    "relUrl": "/miappe/germplasm.html"
+  },"11": {
+    "doc": "Importing data with the GUI",
+    "title": "Importing data with the GUI",
+    "content": " ",
+    "url": "/gui.html",
+    
+    "relUrl": "/gui.html"
+  },"12": {
+    "doc": "Index",
+    "title": "Description :",
+    "content": "In the context of my internship, I am working on SIMPLE, a Command Line Interface coded in python with a focus on ease of use, rapidity and flexibility. This tool will ( I hope ) help researchers upload MIAPPE compliant phenotyping data on OpenSilex instances without any efforts. Allowing them to keep germplasm banks up to date, to create experiments, create or add scientific objects to an experiment, add pictures, DATA and more. ",
+    "url": "/#description-",
+    
+    "relUrl": "/#description-"
+  },"13": {
+    "doc": "Index",
     "title": "Documentation SIMPLE",
     "content": "This documentation is here to guide you when uploading phenomic data and metadata with corresponding images while following the MIAPPE standard on your PHIS instance ! . I tried making this documentation as clear as possible, but if you have any issues/question/want to contribute, don’t hesitate to contact me. ",
     "url": "/#documentation-simple",
     
     "relUrl": "/#documentation-simple"
-  },"1": {
-    "doc": "Home",
-    "title": "Simple interface MIAPPE-PHIS Lightweight and Efficient",
-    "content": ". ",
-    "url": "/#simple-interface-miappe-phis-lightweight-and-efficient",
-    
-    "relUrl": "/#simple-interface-miappe-phis-lightweight-and-efficient"
-  },"2": {
-    "doc": "Home",
+  },"14": {
+    "doc": "Index",
     "title": "How to use",
-    "content": "Before ‘using’ anything, we will need to : . | Properly fill the MIAPPE template available on the Github. | Organize the experiment folder containing data/datafiles… | . Small glossary : . Tabular data file : refers to a xlsx/excel file containing tabular data of the experiment like such : [IMAGE] Datafiles : refers to images, spectral images, archives linked to the experiment. ",
+    "content": "Before ‘using’ anything, we will need to : . | Properly fill the MIAPPE template available on the Github. Miappe Help . | Organize the experiment folder containing data/datafiles… . folder Help . | Format your tabular data . Tabular data Help . | Download the latest version of the program. Releases . | . ",
     "url": "/#how-to-use",
     
     "relUrl": "/#how-to-use"
-  },"3": {
-    "doc": "Home",
-    "title": "The MIAPPE file.",
-    "content": "Let’s start with the MIAPPE file : MIAPPE (Minimal information about a plant phenotyping experiment) is a data-standard maintained by a community of volunteers, you can check it out here : link The basic MIAPPE template has been lightly modified to work with this project, you can find on the github : here. Since the developement is still ongoing, it may be subject to change, and it is good practice to check if you are using the latest version available, this can be done by following updates.c As previously stated,the regular MIAPPE file has been modified to account for new columns corresponding to Phis vocabulary, this is the second row, please, do not rename or tamper with columns and columns names as it would make reading it impossible by a program… Regarding the filling of the document, it is the same as a regular MIAPPE file and the color code should be respected : red = mandatory, green = recommended, black = optional; if only one of two column name are red it means it still means the information is required. As you may have noticed, I annotated most cells of the MIAPPE file, telling you how each cell should be filled when you put your mouse on the cell; However, you will find below tips and guidelines to aid you in filling properly the document, sheet by sheet if there is anything important or complex on that sheet. Read Me sheet : . This sheet contains information about each column of each sheet in the Miappe document, this is part of the original MIAPPE file and is only used to help you fill it properly. You can freely modify it, write memos etc or delete it altogether if you’re sure you don’t need it anymore. Project sheet : . In the PHIS vocabulary, a project can host multiple experiments. Here is where you will fill information about the project where your experiment belongs. The project has to be created by hand on your phis instance before being referenced on the MIAPPE sheet, SIMPLE does not create projects This sheet is pretty straightforward to fill. Experiment sheet : . The experiment sheet contains crucial information about your experiment. Fill it carefully. You can find help regarding some important columns below : . | name : How your experiment is named, how it will be searched and displayed in PHIS. | start_date and end_date : needs to follow this template : “yyyy-mm-dd”. | organisations : need to be created manually if they don’t already exist on your instance and are separated by commas | experiment_timezone : Needs to be filled following the timezone standards “Europe/***”, if left blank, it will default to UTC. This is also used when importing data and datafiles. | facilities : same instructions as organisations. | funding : same instructions as organisations. | projects : name of the project the experiment is part of (cf project sheet ‘name’) | groups : same instructions as organisations. | scientific_object_type : must be part of the rdf phis vocabulary. Has only been tested for ‘Plant’ so far… Other types may be ‘Plot’, ‘seed’, ‘leaf’… | . [example of a correctly filled sheet] . Person sheet : . This sheet is not currently used by the program and may be filled freely. You should create one line per person in the project. Germplasm sheet : . The germplasm sheet is also especially important, this is where every germplasm ( variety and species) will be declared. You can find help regarding some important columns below : . | name : is the name of the germplasm, how it will be looked up, and displayed, if the germplasm is already on your phis instance, please be sure that there is no typo and that the names matches exactly. If not, a new germplasm will be created, thus leading to duplicate data and issues… | rdf_type : you currently have the choice between Species and Varieties (vocabulary:Species or vocabulary:Variety( Warning : this is case sensitive )). Please declare all the species that will be used by the varieties before declaring varieties. Following the example below: | . [IMAGE] . | uri : You can put the external uri of the germplasm here. If left blank, it will create a default uri; this is not recommended. | species : If the germplasm is a variety, you can put the name of the species it belongs to in this column. If it is a species, you can leave this column blank. | . [example of a correctly filled sheet] . Concerning the other columns : They can be filled using the Read me sheet of the MIAPPE file, notice that they are colored in green, and thus are not mandatory. Please fill out as much information as you have on the germplasms. Factors sheet : . This sheet is also very important when creating the factors related to our experiment. You can find help regarding some important columns below : . | factor name will be used to look for factors in your tabular data file when creating scientific objects for example, this means the factor name has to exactly match the name of the column used to give the factors for each row in your tabular datafile. | factor description : can be used to describe the factors | factor levels names are used in the same way, this means you have to exactly match the factor levels (low light, high light, water stress 80, water stress 20) or there will be errors. You cannot name your factor levels using certain symbols (PHIS safeguards). Forbiden symbols include but are not limited to - , +, /, %, * Math symbols… | factor_level_desc : can be used to describe in details each factor levels : | . Below is an example of good match between factors and factor levels in the MIAPPE and the Tabular data : . [IMAGE] . | If your factors look like this, please separate them using the text to column option on your favorite spreadsheet program. | Here, we can see the name on the first row doesn’t exactly match the data. The same problem can be seen on the factor levels. | Here, we can see that the factor level names contain forbidden characters, this will not work. | . [IMAGE] . mapping_table_variables sheet : . This sheet is an addition to the original MIAPPE and can be deleted if you want to share the MIAPPE file. It contains two columns : . | column_in_data_table : This column corresponds to the exact name of the columns in your tabular data file. The names must exactly match. | opensilex_variable_name : This column corresponds to the name (or shortname) of the equivalent variable on the PHIS instance. Thus, you have to manually create the variables if they do not already exist on your instance, then reference them here. The program will automatically pick the right variables for the right datafile, so you can safely copy-paste your ‘mapping_table_variables’ sheet onto different experiments, even if the variable is not used in the present experiment. | . [example of a correctly filled sheet] . data files sheet : . This sheet is crucial when importing datafiles (Images/archives…). You can find help regarding some important columns below : . | dataFileLink : refers to the exact name of the tabular data file that will be linked to the datafiles your are importing. With the extension. | dataFileDesc : can be a description, the number of parameters in this tabular data file etc… | Tabular Data Provenance : If there is no provenances yet for your instance/the data you want to upload; you have to create a provenance manually on your phis instance when importing data and datafiles. If there is one, simply put the exact name of the provenance to link the tabular data to it. | Datafiles1 Provenance and Datafiles2 Provenance : With SIMPLE you can upload two sets of datafiles linked together, this canbe the raw image and the derived image. If you only have one set of datafile, just fill what is related to the first set of datafiles and leave the reste blank. Same instructions as Tabular Data Provenance but regarding the datafiles (Images/Archives) uploaded, please use/create another provenance specific for images. | datafile1_rdf_type and datafile1_rdf_type : you currently have the choice between RGBImage and Archive. Warning : this is case sensitive. If you are importing images, use RGBImages… | . [example of a correctly filled sheet] . etc.. sheet . ",
-    "url": "/#the-miappe-file",
-    
-    "relUrl": "/#the-miappe-file"
-  },"4": {
-    "doc": "Home",
-    "title": "The experiment structure.",
-    "content": "Each experiment should have a dedicated folder, the filled miappe template for the experiment, the tabular data, the datafiles you would like to upload should all be inside this folder like so : . [example of a correct file structure] . ",
-    "url": "/#the-experiment-structure",
-    
-    "relUrl": "/#the-experiment-structure"
-  },"5": {
-    "doc": "Home",
-    "title": "The tabular data file.",
-    "content": "All column names are case sensitive. Mandatory : . There is only two mandatory columns for tabular data, the ‘timestamp’ column and the ‘germplasm’ column. | the timestamp column should contain the timestamp of when the data was collected following the standard : ‘YYYY-MM-DD HH:MM:SS’. Valid exemples would be : 2025-01-12 12:10:56… | the germplasm column should contain the germplasm’s name. Valid exemples would be : … | . Optional : . However, if you would like to link data to datafiles (images, archives) you also need to create a column named ‘Datafile1_Filename’ stating for each row the exact name of the datafile. This will be the first set of datafiles. If there is a second set of datafiles, derived from the first one, you will need to create a second column named ‘Datafile2_Filename’ stating for each row the exact name of the datafile. | the Datafile1_Filename &amp; Datafile2_Filename columns should contain the exact filename of the datafile with it’s extension (.png,.jpeg, .tar, .png etc). Valid exemples would be : 121_9_2024-06-24_07-24-41_2024_ToAB_Stress_79_RGB2_FishEyeCorrected.png, Archive-12.tar, 163-38-24_KuKa_117-Cst-L-1.1-Area 02-RGB2-FishEyeMasked-Crop.png… etc.. (((toolbox ?)))) | . [example of a correctly filled tabular data file] . ",
-    "url": "/#the-tabular-data-file",
-    
-    "relUrl": "/#the-tabular-data-file"
-  },"6": {
-    "doc": "Home",
-    "title": "The datafiles.",
-    "content": "named properly idk frrr . ",
-    "url": "/#the-datafiles",
-    
-    "relUrl": "/#the-datafiles"
-  },"7": {
-    "doc": "Home",
-    "title": "Importing data using the CLI",
-    "content": "meow . ",
-    "url": "/#importing-data-using-the-cli",
-    
-    "relUrl": "/#importing-data-using-the-cli"
-  },"8": {
-    "doc": "Home",
-    "title": "Importing data using the GUI",
-    "content": " ",
-    "url": "/#importing-data-using-the-gui",
-    
-    "relUrl": "/#importing-data-using-the-gui"
-  },"9": {
-    "doc": "Home",
+  },"15": {
+    "doc": "Index",
     "title": "Common issues and troubleshooting",
     "content": " ",
     "url": "/#common-issues-and-troubleshooting",
     
     "relUrl": "/#common-issues-and-troubleshooting"
-  },"10": {
-    "doc": "Home",
+  },"16": {
+    "doc": "Index",
     "title": "The MIAPPE output.",
     "content": " ",
     "url": "/#the-miappe-output",
     
     "relUrl": "/#the-miappe-output"
-  },"11": {
-    "doc": "Home",
-    "title": "Home",
-    "content": " ",
+  },"17": {
+    "doc": "Index",
+    "title": "Index",
+    "content": "This documentation is a Work In Progress. It is actively being worked on. ",
     "url": "/",
     
     "relUrl": "/"
-  },"12": {
-    "doc": "test2",
-    "title": "Test 2",
-    "content": " ",
-    "url": "/test/test1%20copy.html#test-2",
+  },"18": {
+    "doc": "Mapping variables sheet",
+    "title": "mapping_table_variables sheet :",
+    "content": "This sheet is an addition to the original MIAPPE and can be deleted if you want to share the MIAPPE file. It contains two columns : . | column_in_data_table : This column corresponds to the exact name of the columns in your tabular data file. The names must exactly match. | opensilex_variable_name : This column corresponds to the name (or shortname) of the equivalent variable on the PHIS instance, thus, you have to manually create the variables if they do not already exist on your instance, then reference them here. The program will automatically pick the right variables for the right datafile, so you can safely copy-paste your ‘mapping_table_variables’ sheet onto different experiments, even if the variable is not used in the present experiment. | . [example of a correctly filled sheet] . ",
+    "url": "/miappe/mapping.html#mapping_table_variables-sheet-",
     
-    "relUrl": "/test/test1%20copy.html#test-2"
-  },"13": {
-    "doc": "test2",
-    "title": "test2",
+    "relUrl": "/miappe/mapping.html#mapping_table_variables-sheet-"
+  },"19": {
+    "doc": "Mapping variables sheet",
+    "title": "Mapping variables sheet",
     "content": " ",
-    "url": "/test/test1%20copy.html",
+    "url": "/miappe/mapping.html",
     
-    "relUrl": "/test/test1%20copy.html"
-  },"14": {
-    "doc": "test1",
-    "title": "Test 1",
+    "relUrl": "/miappe/mapping.html"
+  },"20": {
+    "doc": "Filling the MIAPPE",
+    "title": "The MIAPPE file.",
+    "content": "Let’s start with the MIAPPE file : MIAPPE (Minimal information about a plant phenotyping experiment) is a data-standard maintained by a community of volunteers, you can check it out here : link The basic MIAPPE template has been lightly modified to work with this project, you can find on the github : here. Since the developement is still ongoing, it may be subject to change, and it is good practice to check if you are using the latest version available, this can be done by following updates. As previously stated,the regular MIAPPE file has been modified to account for new columns corresponding to Phis vocabulary, this is the second row, please, do not rename or tamper with columns and columns names as it would make reading it impossible by a program… . Regarding the filling of the document, it is the same as a regular MIAPPE file and the color code should be respected : red = mandatory, green = recommended, black = optional; if only one of two column name are red it means it still means the information is required. As you may have noticed, I annotated most cells of the MIAPPE file, telling you how each cell should be filled when you put your mouse on the cell; However, you will find below tips and guidelines to aid you in filling properly the document, sheet by sheet if there is anything important or complex on that sheet. ",
+    "url": "/miappe/miappe_file.html#the-miappe-file",
+    
+    "relUrl": "/miappe/miappe_file.html#the-miappe-file"
+  },"21": {
+    "doc": "Filling the MIAPPE",
+    "title": "Filling the MIAPPE",
+    "content": "This documentation is a Work In Progress. It is actively being worked on. ",
+    "url": "/miappe/miappe_file.html",
+    
+    "relUrl": "/miappe/miappe_file.html"
+  },"22": {
+    "doc": "Person sheet",
+    "title": "Person sheet :",
+    "content": "This sheet is not currently used by the program and may be filled freely. You should create one line per person in the project. ",
+    "url": "/miappe/person.html#person-sheet-",
+    
+    "relUrl": "/miappe/person.html#person-sheet-"
+  },"23": {
+    "doc": "Person sheet",
+    "title": "Person sheet",
     "content": " ",
-    "url": "/test/test1.html#test-1",
+    "url": "/miappe/person.html",
     
-    "relUrl": "/test/test1.html#test-1"
-  },"15": {
-    "doc": "test1",
-    "title": "test1",
+    "relUrl": "/miappe/person.html"
+  },"24": {
+    "doc": "Project sheet",
+    "title": "Project sheet :",
+    "content": "In the PHIS vocabulary, a project can host multiple experiments. Here is where you will fill information about the project where your experiment belongs. The project has to be created by hand on your phis instance before being referenced on the MIAPPE sheet, SIMPLE does not create projects. This sheet is pretty straightforward to fill. [exemple of a properly filled project] . ",
+    "url": "/miappe/project.html#project-sheet-",
+    
+    "relUrl": "/miappe/project.html#project-sheet-"
+  },"25": {
+    "doc": "Project sheet",
+    "title": "Project sheet",
     "content": " ",
-    "url": "/test/test1.html",
+    "url": "/miappe/project.html",
     
-    "relUrl": "/test/test1.html"
+    "relUrl": "/miappe/project.html"
+  },"26": {
+    "doc": "Read me sheet",
+    "title": "Read Me sheet :",
+    "content": "This sheet contains information about each column of each sheet in the Miappe document, this is part of the original MIAPPE file and is only used to help you fill it properly. You can freely modify it, write memos etc or delete it altogether if you’re sure you don’t need it anymore. ",
+    "url": "/miappe/readme.html#read-me-sheet-",
+    
+    "relUrl": "/miappe/readme.html#read-me-sheet-"
+  },"27": {
+    "doc": "Read me sheet",
+    "title": "Read me sheet",
+    "content": " ",
+    "url": "/miappe/readme.html",
+    
+    "relUrl": "/miappe/readme.html"
+  },"28": {
+    "doc": "Formatting tabular data files",
+    "title": "The tabular data file.",
+    "content": "Nota bene . All column names are case sensitive. ",
+    "url": "/tabular_data.html#the-tabular-data-file",
+    
+    "relUrl": "/tabular_data.html#the-tabular-data-file"
+  },"29": {
+    "doc": "Formatting tabular data files",
+    "title": "Mandatory modifications:",
+    "content": "There is only two mandatory columns for tabular data, the ‘timestamp’ column and the ‘germplasm’ column. | the timestamp column should contain the timestamp of when the data was collected following the standard : ‘YYYY-MM-DD HH:MM:SS’. Valid exemples would be : 2025-01-12 12:10:56… | the germplasm column should contain the germplasm’s name. Valid exemples would be : … | . ",
+    "url": "/tabular_data.html#mandatory-modifications",
+    
+    "relUrl": "/tabular_data.html#mandatory-modifications"
+  },"30": {
+    "doc": "Formatting tabular data files",
+    "title": "Optional modifications:",
+    "content": "However, if you would like to link data to datafiles (images, archives) you also need to create a column named ‘Datafile1_Filename’ stating for each row the exact name of the datafile. This will be the first set of datafiles. If there is a second set of datafiles, derived from the first one, you will need to create a second column named ‘Datafile2_Filename’ stating for each row the exact name of the datafile. | the Datafile1_Filename &amp; Datafile2_Filename columns should contain the exact filename of the datafile with it’s extension (.png,.jpeg, .tar, .png etc). Valid exemples would be : 121_9_2024-06-24_07-24-41_2024_ToAB_Stress_79_RGB2_FishEyeCorrected.png, Archive-12.tar, 163-38-24_KuKa_117-Cst-L-1.1-Area 02-RGB2-FishEyeMasked-Crop.png… etc.. (((toolbox ?))) | . [example of a correctly filled tabular data file] . ",
+    "url": "/tabular_data.html#optional-modifications",
+    
+    "relUrl": "/tabular_data.html#optional-modifications"
+  },"31": {
+    "doc": "Formatting tabular data files",
+    "title": "Formatting tabular data files",
+    "content": " ",
+    "url": "/tabular_data.html",
+    
+    "relUrl": "/tabular_data.html"
   }
 }

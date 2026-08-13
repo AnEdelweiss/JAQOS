@@ -5,7 +5,7 @@ theme: just-the-docs
 url: https://AnEdelweiss.github.io/AnEdelweiss/SIMPLE_documentation
 
 aux_links:
-  Template Repository: 
+  Simple Repository: https://github.com/AnEdelweiss/SIMPLE 
 
 defaults:
   - scope:
@@ -48,7 +48,7 @@ search:
   # Focus the search input by pressing `ctrl + focus_shortcut_key` (or `cmd + focus_shortcut_key` on macOS)
   focus_shortcut_key: "k"
 
-  callouts:
+callouts:
   highlight:
     color: yellow
   important:
