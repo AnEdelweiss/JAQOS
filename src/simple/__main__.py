@@ -1,7 +1,7 @@
 import argparse
 
 from simple.cli import main as cli_main
-from simple.gui import main as gui_main
+
 
 
 def main():
@@ -16,6 +16,7 @@ def main():
     args, unknown = parser.parse_known_args()
 
     if args.gui:
+        from simple.gui import main as gui_main
         gui_main()
     else:
         cli_main()
