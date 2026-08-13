@@ -36,7 +36,7 @@ Before 'using' anything, we will need to :
 
 1. Download the latest version of the program.
 
-    [Releases](github.com/AnEdelweiss/SIMPLE/releases){: .btn .btn-green }
+    [Releases](https://github.com/AnEdelweiss/SIMPLE/releases){: .btn .btn-green }
 
 
 ## Common issues and troubleshooting
