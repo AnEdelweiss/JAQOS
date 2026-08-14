@@ -5,7 +5,7 @@
 [WIP documentation](https://anedelweiss.github.io/SIMPLE/)
 
 
-![icon](docs/flavicon.ico "Asciinema")
+![icon](simple_square.png)
 
   V click here for a Quick Demo ! V
 
