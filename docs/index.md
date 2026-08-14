@@ -22,29 +22,38 @@ I tried making this documentation as clear as possible, but if you have any issu
 
 ---
 
-# What to do now ?
+# What do i do now ?
 Simple, just follow the instructions : 
 
-1. Properly fill the MIAPPE template available on the Github.
+1. ### Properly fill the MIAPPE template available on the Github.
 
     1. [Download MIAPPE file](https://github.com/AnEdelweiss/SIMPLE/releases/download/v0.22-minor_fixes_%26_GUI/empty_MIAPPE_template.xlsx){: .btn .btn-green }
     1. [Get help filling the MIAPPE file]({% link miappe/miappe_file.md %})
 
-1. Organize the experiment folder containing data/datafiles...
+1. ### Organize the experiment folder containing data/datafiles...
 
-    [Get help organizing the experiment folder]({% link experiment_folder.md %})
+    - [Get help organizing the experiment folder]({% link experiment_folder.md %})
 
-1. Format your tabular data
+1. ### Format your tabular data
 
-    [Get help formatting the tabular data files]({% link tabular_data.md %})
+    - [Get help formatting the tabular data files]({% link tabular_data.md %})
 
-1. Download the latest version of SIMPLE for your OS.
+1. ### Use SIMPLE to upload your experiment
 
-    [Github Releases](https://github.com/AnEdelweiss/SIMPLE/releases){: .btn .btn-green }
+
+    1. [Download SIMPLE](https://github.com/AnEdelweiss/SIMPLE/releases){: .btn .btn-green }
+
+    >{: .new-title}
+    > > Recommended
+    > >
+    > > [Get help uploading your experiment (CLI) ]({% link cli.md %})
+
+    >{: .highlight-title}
+    > > WIP
+    > >
+    > >[Get help uploading your experiment (GUI) ]({% link gui.md %})
+
     
-1. Look at how nice your experiment looks on your PHIS instance ! :)
+1. ### Look at how nice your experiment looks on your PHIS instance ! :)
 
     ![Your experiment](your_experiment.png)
-
-## Common issues and troubleshooting
-
