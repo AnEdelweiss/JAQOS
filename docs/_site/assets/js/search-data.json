@@ -1,7 +1,7 @@
 {"0": {
     "doc": "Importing data with the CLI",
     "title": "Importing data with the CLI",
-    "content": " ",
+    "content": ". ",
     "url": "/cli.html",
     
     "relUrl": "/cli.html"
@@ -36,7 +36,7 @@
   },"5": {
     "doc": "Experiment folder structure",
     "title": "The experiment structure.",
-    "content": "Each experiment should have a dedicated folder, the filled miappe template for the experiment, the tabular data, the datafiles you would like to upload should all be inside this folder like so : . exp_database/ │ ├── experiment_1/ │ ├── tabular_data_file_RGB1.xlsx │ ├── tabular_data_file_archives.xlsx │ ├── Miappe_template.xlsx │ ├── 00-RoundProtocol/ (optional) │ │ └── Round_protocol_files.txt │ ├── output/ │ │ └── miappe_template_filled.xlsx │ ├── Archives_folder/ (optional) │ │ └── archive1.tar │ │ └── archive2.tar │ └── archive....tar │ └── Image_folder/ (optional) │ └── image1.png │ └── image2.png │ └── image...png ├── experiment_2/ ├── experiment_3/ └── experiment_.../ . ",
+    "content": "You should put all your experiments in one folder, this will be your ‘experiment database’. Each experiment should have a dedicated folder, the filled miappe template for the experiment, the tabular data, the datafiles you would like to upload should all be inside this folder like so : . There is no naming convention for the folders nor for the files, you can do however you prefer, but try to make it as clear as possible. Here is more information about what is inside each folders : . dummy_experiment ├── ARC │   ├── Archive-1.zip │   ├── Archive-2.zip │   └── Archive-....zip ├── ARC_tabular_data.xlsx ├── filled_exemple_Miappe_Template.xlsx ├── output │   └── miappe_template_filled.xlsx ├── RGB1 │   ├── derived │   │   ├── RGB1-1-derived.png │   │   ├── RGB1-2-derived.png │   │   └── RGB1-...-derived.png │   └── raw │   ├── RGB1-1-raw.png │   ├── RGB1-2-raw.png │   └── RGB1-...-raw.png ├── RGB1_tabular_data.xlsx ├── RGB2 │   ├── derived │   │   ├── RGB2-1-derived.png │   │   ├── RGB2-2-derived.png │   │   └── RGB2-...-derived.png │   └── raw │   ├── RGB2-1-raw.png │   ├── RGB2-2-raw.png │      └── RGB2-...-raw.png └── RGB2_tabular_data.xlsx . ",
     "url": "/experiment_folder.html#the-experiment-structure",
     
     "relUrl": "/experiment_folder.html#the-experiment-structure"
@@ -78,7 +78,7 @@
   },"11": {
     "doc": "Importing data with the GUI",
     "title": "Importing data with the GUI",
-    "content": " ",
+    "content": "The GUI is still an experimental feature and man safeguards are not yet implemented. Make sure to try importing on the sandbox before trying it on your instance. ",
     "url": "/gui.html",
     
     "relUrl": "/gui.html"
@@ -211,17 +211,17 @@
   },"30": {
     "doc": "Formatting tabular data files",
     "title": "Mandatory modifications:",
-    "content": "There is only two mandatory columns for tabular data, the ‘timestamp’ column and the ‘germplasm’ column. | the timestamp column should contain the timestamp of when the data was collected following the standard : ‘YYYY-MM-DD HH:MM:SS’. Valid exemples would be : 2025-01-12 12:10:56… | the germplasm column should contain the germplasm’s name. Valid exemples would be : … | . ",
+    "content": "There is only two mandatory columns for tabular data, the ‘timestamp’ column and the ‘germplasm’ column. | the timestamp column should contain the timestamp of when the data was collected following the standard : ‘YYYY-MM-DD HH:MM:SS’. Valid exemples would be : 2025-01-12 12:10:56… . | the Plant ID column should contain a unique identifier related to the plant, this will be useful when creating scientific objects. One scientific object will be created for each different ‘Plant ID’. | the Germplasm column should contain the germplasm’s name. Valid exemples would be : . | And now you need to add columns for the data, each column containing data must be named after the variable name you gave in the MIAPPE. (cf MIAPPE mapping table ) . | . Here is an example of a properly filled sheet. You can see there is two variables at the end AREA_MM and HEIGHT_MM. This data will not be linked to data files. Here is how it would appear on your phis instance if you visualize one variable of one scientific object. Each yellow point represents a data point : . ",
     "url": "/tabular_data.html#mandatory-modifications",
     
     "relUrl": "/tabular_data.html#mandatory-modifications"
   },"31": {
     "doc": "Formatting tabular data files",
-    "title": "Optional modifications:",
-    "content": "However, if you would like to link data to datafiles (images, archives) you also need to create a column named ‘Datafile1_Filename’ stating for each row the exact name of the datafile. This will be the first set of datafiles. If there is a second set of datafiles, derived from the first one, you will need to create a second column named ‘Datafile2_Filename’ stating for each row the exact name of the datafile. | the Datafile1_Filename &amp; Datafile2_Filename columns should contain the exact filename of the datafile with it’s extension (.png,.jpeg, .tar, .png etc). Valid exemples would be : 121_9_2024-06-24_07-24-41_2024_ToAB_Stress_79_RGB2_FishEyeCorrected.png, Archive-12.tar, 163-38-24_KuKa_117-Cst-L-1.1-Area 02-RGB2-FishEyeMasked-Crop.png… etc.. (((toolbox ?))) | . [example of a correctly filled tabular data file] . ",
-    "url": "/tabular_data.html#optional-modifications",
+    "title": "Importing datafiles:",
+    "content": "If you would like to link data to datafiles (images, archives) you also need to create a column named ‘Datafile1_Filename’ stating for each row the exact name of the datafile. This will be the first set of datafiles. If there is a second set of datafiles, derived from the first one, you will need to create a second column named ‘Datafile2_Filename’ stating for each row the exact name of the datafile. | the Datafile1_Filename &amp; Datafile2_Filename columns should contain the exact filename of the datafile, with it’s extension (.png,.jpeg, .tar, .png etc). If your images follow strict naming conventions and are named after information that can be easily retrieved within the excel, this process can be automated via scripts of any kind. Valid exemples would be : . | 121_9_2024-06-24_07-24-41_2024_ToAB_Stress_79.png | Archive-12.tar | 163-38-24_KuKa_117-Cst-L-1.1-Area_02-RGB2-FishEyeMasked.png | . | . Here is an example of a properly filled sheet. You can see there is two variables at the end AREA_MM and HEIGHT_MM. Now, for each data point, there will be an image linked to it when visualizing it on your phis instance. The image path/name will also be present in the metadata of the data point. Since there is two datafiles set given in this example (Datafile1_Filename &amp; Datafile2_Filename) there will be two images per datapoints, but you can also put only the Datafile1_Filename column in your tabular data file; to only upload one datafile per data point, like on the visualisation at the end of this page. Here is how it would appear on your phis instance if you visualize one variable of one scientific object, each blue circle represents an image : . ",
+    "url": "/tabular_data.html#importing-datafiles",
     
-    "relUrl": "/tabular_data.html#optional-modifications"
+    "relUrl": "/tabular_data.html#importing-datafiles"
   },"32": {
     "doc": "Formatting tabular data files",
     "title": "Formatting tabular data files",
