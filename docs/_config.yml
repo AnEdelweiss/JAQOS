@@ -1,7 +1,9 @@
 title: SIMPLE documentation
 description: Documentation about the SIMPLE program made in python, for PHIS and MIAPPE
 theme: just-the-docs
-favicon_ico: "simple.ico"
+
+favicon_ico: "favicon.ico"
+
 url: https://AnEdelweiss.github.io/AnEdelweiss/SIMPLE_documentation
 
 aux_links:
@@ -46,7 +48,7 @@ search:
   # Supports true or false (default)
   button: false
   # Focus the search input by pressing `ctrl + focus_shortcut_key` (or `cmd + focus_shortcut_key` on macOS)
-  focus_shortcut_key: "k"
+  focus_shortcut_key: "f"
 
 callouts:
   highlight:
