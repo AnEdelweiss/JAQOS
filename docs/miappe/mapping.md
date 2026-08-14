@@ -15,4 +15,4 @@ It contains two columns :
 
 Here is an example of a properly filled sheet. And an explicative diagram.
 
-[Mapping table](miappe_images/mapping_table.png)
+![Mapping table](miappe_images/mapping_table.png)
