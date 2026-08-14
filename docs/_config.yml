@@ -1,7 +1,7 @@
 title: SIMPLE documentation
 description: Documentation about the SIMPLE program made in python, for PHIS and MIAPPE
 theme: just-the-docs
-
+favicon_ico: "simple.ico"
 url: https://AnEdelweiss.github.io/AnEdelweiss/SIMPLE_documentation
 
 aux_links:

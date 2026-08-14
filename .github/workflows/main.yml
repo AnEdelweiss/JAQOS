@@ -31,7 +31,7 @@ jobs:
         run: uv pip install --system .
 
       - name: Build CLI executable
-        run: pyinstaller --onefile --name SIMPLE src/simple/__main__.py
+        run: pyinstaller --onefile --name SIMPLE --icon=docs/simple.ico src/simple/__main__.py 
 
       - name: Install GUI dependencies
         run: uv pip install --system pyqt6
@@ -40,7 +40,7 @@ jobs:
         run: |
           cat << 'EOF' > launch_gui.py
           import sys
-          import simple.__main__ # Forces PyInstaller to bundle your package and its dependencies
+          import simple.__main__
           import runpy
           
           if '--gui' not in sys.argv:
@@ -51,7 +51,7 @@ jobs:
         shell: bash
 
       - name: Build GUI executable
-        run: pyinstaller --onefile --windowed --name SIMPLE-gui launch_gui.py
+        run: pyinstaller --onefile --windowed --name SIMPLE-gui --icon=docs/simple.ico launch_gui.py 
 
       - name: Rename executables
         run: |
