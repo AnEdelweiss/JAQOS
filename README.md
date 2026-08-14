@@ -1,10 +1,10 @@
-# SIMPLE
+<img src="simple_square.png" alt="icon" width="200" height="200">
 
 ### Simple Interface MIAPPE-Phis, Lightweight & Efficient
 
 [WIP documentation](https://anedelweiss.github.io/SIMPLE/)
 
-<img src="simple_square.png" alt="icon" width="200" height="200">
+
 
   V click here for a Quick Demo ! V
 
