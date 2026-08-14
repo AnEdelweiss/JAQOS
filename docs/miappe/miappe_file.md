@@ -11,7 +11,7 @@ Let's start with the MIAPPE file : MIAPPE (Minimal information about a plant phe
 
 The basic MIAPPE template has been lightly modified to work with this project, you can download it here : 
 
-[Download MIAPPE](https://github.com/AnEdelweiss/SIMPLE/releases/download/v0.22-minor_fixes_%26_GUI/empty_MIAPPE_template.xlsx){: .btn .btn-green }
+[Download MIAPPE file](https://github.com/AnEdelweiss/SIMPLE/releases/download/v0.22-minor_fixes_%26_GUI/empty_MIAPPE_template.xlsx){: .btn .btn-green }
 
 Alternatively you can find it on the github : [here](https://github.com/AnEdelweiss/SIMPLE/blob/master/empty_MIAPPE_template.xlsx).
 
