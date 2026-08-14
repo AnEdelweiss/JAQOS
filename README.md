@@ -2,7 +2,10 @@
 
 ### Simple Interface MIAPPE-Phis, Lightweight & Efficient
 
-This is a work in progress, feedbacks are welcome.
+[WIP documentation](https://anedelweiss.github.io/SIMPLE/)
+
+
+![icon](docs/flavicon.ico "Asciinema")
 
   V click here for a Quick Demo ! V
 
@@ -12,7 +15,6 @@ or here : [asciinema link](https://asciinema.org/a/wbQdA2NXiHwN86DZ)
 
 Dummy experiment on Phis to show how the final experiment would look : [link to sandbox](https://opensilex.org/sandbox/app/experiment/details/opensilex-sandbox%3Aid%2Fexperiment%2Fdummy_experiment)
 
-[WIP documentation](https://anedelweiss.github.io/SIMPLE/)
 
 ## Description.
 
