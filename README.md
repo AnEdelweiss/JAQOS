@@ -1,4 +1,6 @@
-<img src="simple_square.png" alt="icon" width="200" height="200">
+<p align="center">
+  <img src="simple_square.png" alt="icon" width="200" height="200">
+</p>
 
 ### Simple Interface MIAPPE-Phis, Lightweight & Efficient
 
