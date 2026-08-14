@@ -4,8 +4,7 @@
 
 [WIP documentation](https://anedelweiss.github.io/SIMPLE/)
 
-
-![icon](simple_square.png)
+<img src="simple_square.png" alt="icon" width="200" height="200">
 
   V click here for a Quick Demo ! V
 
