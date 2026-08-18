@@ -3,6 +3,7 @@ title: Index
 layout: home
 nav_order: 1
 ---
+![Logos](index_images/logos.png)
 
 {: .new-title}
 >Info
@@ -19,6 +20,10 @@ In the context of my internship, I am working on SIMPLE, a Command Line Interfac
 This documentation is here to guide you when uploading phenomic data and metadata with corresponding images while following the MIAPPE standard on your PHIS instance !
 
 I tried making this documentation as clear as possible, but if you have any issues/question/want to contribute, __don't hesitate to [contact]({% link contact.md %}) me__.
+
+<p align="center">
+    <img src="index_images/logo_simple.png" alt="simple" width="300"/>
+</p>
 
 ---
 
