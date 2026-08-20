@@ -4,18 +4,17 @@
 
 ### Simple Interface MIAPPE-Phis, Lightweight & Efficient
 
-  V click here for a Quick Demo ! V
+  V see here for a Quick Demo ! V
 
 ![Asciinema](simple.gif "Asciinema")
 
 or here : [asciinema link](https://asciinema.org/a/wbQdA2NXiHwN86DZ)
 
-
-
-
 ## Description.
 
-In the context of my internship, I am working on SIMPLE, a Command Line Interface (and an alternative GUI) coded in python with a focus on ease of use, rapidity and flexibility. This tool has been designed to help researchers upload MIAPPE compliant phenotyping data on OpenSilex Phis instances with minimal efforts : filling a MIAPPE template. Allowing them to keep germplasm banks up to date, create experiments, create or add scientific objects to an experiment, add pictures, DATA and more !
+In the context of my internship, I am working on SIMPLE, a Command Line Interface (and an alternative GUI) coded in python with a focus on ease of use, rapidity and flexibility. This tool has been designed to help researchers upload MIAPPE compliant phenotyping data on OpenSilex Phis instances with minimal efforts : filling a MIAPPE template. Allowing them to keep germplasm banks up to date, create experiments, add scientific objects to an experiment, add pictures, tabular data and more !
+
+All this with a thorough [documentation](https://anedelweiss.github.io/SIMPLE/) to make the process as easy as possible !
 
 Dummy experiment on Phis Sandbox to show how the final experiment would look : [link to sandbox](https://opensilex.org/sandbox/app/experiment/details/opensilex-sandbox%3Aid%2Fexperiment%2Fdummy_experiment) (connect as guest)
 
