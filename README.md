@@ -6,9 +6,9 @@
 
   V see here for a Quick Demo ! V
 
-![Asciinema](simple.gif "Asciinema")
+![cli](simple.gif "Asciinema")
 
-or here : [asciinema link](https://asciinema.org/a/wbQdA2NXiHwN86DZ)
+or here : [asciinema link](https://asciinema.org/a/vgznnODoenqWjDki)
 
 ## Description.
 
