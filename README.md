@@ -1,3 +1,4 @@
+[![DOI](https://zenodo.org/badge/1257226573.svg)](https://doi.org/10.5281/zenodo.22113173)
 <p align="center">
   <img src="simple_square.png" alt="icon" width="200" height="200">
 </p>
