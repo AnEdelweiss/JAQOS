@@ -10,9 +10,9 @@ nav_order: 1
 >
 >This documentation was made with love, not A.I. <3
 
-# Aim of the project :
+## Aim of the project :
 In the context of my internship, I am working on SIMPLE, a Command Line Interface coded in python with a focus on ease of use, rapidity and flexibility. This tool will ( I hope ) help researchers upload MIAPPE compliant phenotyping data on OpenSilex instances without any efforts. Allowing them to keep germplasm banks up to date, to create experiments, create or add scientific objects to an experiment, add pictures, DATA and more.
-# A simple documentation : 
+## A simple documentation : 
 
 This documentation is here to guide you when uploading phenomic data and metadata with corresponding images while following the MIAPPE standard on your PHIS instance !
 
@@ -40,16 +40,16 @@ Simple, just follow the instructions :
 
 1. ### Use SIMPLE to upload your experiment
 
+    - [Download SIMPLE](https://github.com/AnEdelweiss/SIMPLE/releases){: .btn .btn-green }
 
-    1. [Download SIMPLE](https://github.com/AnEdelweiss/SIMPLE/releases){: .btn .btn-green }
-
+    Then, you can chose the user interface : 
     >{: .new-title}
-    > > Recommended
+    > > Recommended 
     > >
     > > [Get help uploading your experiment (CLI) ]({% link cli.md %})
 
     >{: .highlight-title}
-    > > WIP
+    > > Experimental
     > >
     > >[Get help uploading your experiment (GUI) ]({% link gui.md %})
 

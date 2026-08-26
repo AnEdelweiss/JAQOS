@@ -141,7 +141,7 @@
   },"20": {
     "doc": "Index",
     "title": "What do i do now ?",
-    "content": "Simple, just follow the instructions : . | Properly fill the MIAPPE template available on the Github. | Download MIAPPE file | Get help filling the MIAPPE file | . | Organize the experiment folder containing data/datafiles… . | Get help organizing the experiment folder | . | Format your tabular data . | Get help formatting the tabular data files | . | Use SIMPLE to upload your experiment . | Download SIMPLE | . Recommended . Get help uploading your experiment (CLI) . WIP . Get help uploading your experiment (GUI) . | Look at how nice your experiment looks on your PHIS instance ! :) . | . ",
+    "content": "Simple, just follow the instructions : . | Properly fill the MIAPPE template available on the Github. | Download MIAPPE file | Get help filling the MIAPPE file | . | Organize the experiment folder containing data/datafiles… . | Get help organizing the experiment folder | . | Format your tabular data . | Get help formatting the tabular data files | . | Use SIMPLE to upload your experiment . | Download SIMPLE | . Then, you can chose the user interface : . Recommended . Get help uploading your experiment (CLI) . Experimental . Get help uploading your experiment (GUI) . | Look at how nice your experiment looks on your PHIS instance ! :) . | . ",
     "url": "/#what-do-i-do-now-",
     
     "relUrl": "/#what-do-i-do-now-"
