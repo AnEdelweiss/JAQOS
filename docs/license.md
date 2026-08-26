@@ -1,6 +1,6 @@
 ---
 title: License
-nav_order: 10
+nav_order: 9
 ---
 Here is a quick overview of what the license entails : [License overview (choosealicense.com)](https://choosealicense.com/licenses/gpl-3.0/)
 

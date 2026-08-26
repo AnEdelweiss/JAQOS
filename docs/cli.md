@@ -7,6 +7,9 @@ nav_order: 5
 
 ![CLI1](CLI_images/CLI1.png)
 
+{: .highlight}
+The following steps are to follow only after you filled your miappe template and organized your folder accordingly, please refer to the [index]({% link tabular_data.md %}).
+
 ## Steps  :
 
 ### Logging in
@@ -15,12 +18,12 @@ Before uploading anything, you need to log in on the instance of your choice :
 
 ![login1](CLI_images/cli_login1.png)
 
-For this, we write '1' in the console, to select the first option, this prompts us with the choice of instances :
+For this, we write '__1__' in the console, to select the first option, this prompts us with the choice of instances :
 
 ![login1](CLI_images/cli_login2.png)
 
-Here, we would like to connect to the helsinki instance, so we input '1' again, to select the correct instance.
-We can then enter the mail and password used to log in. If you do not have your phis account, please refer to your instance manager. You have to be registered before logging in.
+Here, we would like to connect to the helsinki instance, so we input '__1__' again, to select the correct instance.
+We can then enter the mail and password used to log in. If you do not have your phis account, please refer to your instance manager. __You have to be registered before logging in__.
 
 ### creating an experiment
 
