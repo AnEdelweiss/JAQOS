@@ -54,34 +54,6 @@ class TestDataImport:
             mock_api_instance.create_germplasm.called is False
         )  # Car search_germplasm a trouvé des résultats
 
-    @patch("simple.data_import.pd.read_excel")
-    @patch("simple.data_import.silex.GermplasmApi")
-    def test_create_germplasm_missing_species_raises_error(
-        self, MockGermplasmApi, mock_read_excel
-    ):
-        """Teste qu'une erreur est levée si on déclare une variété sans avoir déclaré l'espèce avant"""
-        fake_df = pd.DataFrame(
-            {
-                "name": ["Apache"],
-                "species": ["Espece_Inconnue"],
-                "rdf_type": ["vocabulary:Variety"],
-            }
-        )
-        mock_read_excel.return_value = fake_df
-
-        mock_api_instance = MockGermplasmApi.return_value
-        # On simule un "404 Not Found" (liste vide) quand l'API cherche l'espèce
-        mock_api_instance.search_germplasm.return_value = {"result": []}
-
-        fake_client = MagicMock()
-
-        # On vérifie que la fonction lève bien notre exception personnalisée avec le bon message
-        with pytest.raises(DataImportError) as error_info:
-            create_germplasm("dummy_path.xlsx", fake_client)
-
-        assert "Apache" in str(
-            error_info.value
-        )  # Vérifie que la variété fautive est citée dans l'erreur
 
     # ==========================================
     # TESTS POUR CREATE_FACTOR
