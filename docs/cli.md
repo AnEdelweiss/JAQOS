@@ -28,7 +28,7 @@ We can then enter the mail and password used to log in. If you do not have your 
 ### creating an experiment
 
 Now that we are logged in, we want to create an experiment or to upload new data, germplasms, datafiles to an already existing experiment.
-First, we chose the 'I want to create an experiment' optionn by typing '3' :
+First, we chose the 'I want to create an experiment' optionn by typing '__3__' :
 
 ![exp1](CLI_images/cli_exp1.png)
 
@@ -36,19 +36,19 @@ Then, we have to paste the path to the __experiment database__ folder, the one c
 
 ![exp2](CLI_images/cli_exp2.png)
 
-We select the experiment we want to work on (there is only one in our example) by typing '0' for instance : 
+We select the experiment we want to work on (there is only one in our example) by typing '__0__' for instance : 
 
 ![exp3](CLI_images/cli_exp3.png)
 
-We select the MIAPPE file we are using for the experiment by typing '7' here : 
+We select the MIAPPE file we are using for the experiment by typing '__7__' here : 
 
 ![exp4](CLI_images/cli_exp4.png)
 
-We select one of the tabular datafile (cf [tabular datafile help]({% link tabular_data.md %})) by typing '5'. This will be used to create scientific objects, to link datafiles and to upload data of course : 
+We select one of the tabular datafile (cf [tabular datafile help]({% link tabular_data.md %})) by typing '__5__'. This will be used to create scientific objects, to link datafiles and to upload data of course : 
 
 ![exp5](CLI_images/cli_exp5.png)
 
-We are finally prompted with options regarding the creating of the experiment and everything related. It is highly recommended to do this in the written order (1,2,3...) For an easier time, just press '7', to do everything in the correct order. You will then be able to change your tabular data, by typing '8' to upload the other data/datafiles : 
+We are finally prompted with options regarding the creating of the experiment and everything related. It is highly recommended to do this in the written order (1,2,3...) For an easier time, just press '__7__', to do everything in the correct order. You will then be able to change your tabular data, by typing '__8__' to upload the other data/datafiles : 
 
 ![exp6](CLI_images/cli_exp6.png)
 
@@ -58,8 +58,8 @@ To upload datafiles (images) select the folder where they are located like so :
 
 ## Troubleshooting 
 
-There WILL be errors the first time you use SIMPLE, as every experiment is different. However, most of them are due to typos when filling the MIAPPE form or simple data mismatches.
-For the most common errors and how to solve them, the first step is reading the error message, most of the time, it explains how to solve the issue, if this doesn't work out, you can check the created logs by opening the 'logs' folder created where the SIMPLE executable is located. You can then open the latest log, it often contains more detailed informations about what went wrong.
+__There WILL be errors__ the first time you use SIMPLE, as every experiment is different. However, most of them are due to typos when filling the MIAPPE form or simple data mismatches.
+For the most common errors and how to solve them, the first step is __reading the error message__, most of the time, it explains how to solve the issue, if this doesn't work out, you can check the created logs by opening the 'logs' folder created where the SIMPLE executable is located. You can then __open the latest log__, it often contains more detailed informations about what went wrong.
 
 Please refer to the [issues]({% link issues.md %}) page for informations about common errors and how to solve them.
 
