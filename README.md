@@ -4,7 +4,7 @@
 
 ### Simple Interface MIAPPE-Phis, Lightweight & Efficient
 
-  V see here for a Quick Demo ! V
+  V see here for a Quick Demo ! V (click to zoom in)
 
 ![cli](simple.gif "Asciinema")
 
@@ -26,16 +26,19 @@ Please follow the documentation available here : [WIP documentation](https://ane
 
 This project requires Python 3.14.
 
-- git clone https://github.com/AnEdelweiss/SIMPLE.git
-- cd SIMPLE
-- uv venv
-- uv pip install -r pyproject.toml
-- uv run simple
+```bash
+git clone https://github.com/AnEdelweiss/SIMPLE.git
+cd SIMPLE
+uv venv
+uv pip install -r pyproject.toml
+uv run simple
+```
 
-You can then use the provided dummy experiment, you can also modify the content of the miappe_template to try and create different experiments, germplasms etc...
+You can then use the provided dummy experiment, you can also modify the content of the miappe template to try and create different experiments, germplasms etc...
 Everything should work !
 
 link to opensilex project : [opensilex github](https://github.com/OpenSILEX/opensilex )
+
 link to opensilex python package : [opensilex github](https://github.com/OpenSILEX/opensilexClientToolsPython )
 
 ## Contributing
