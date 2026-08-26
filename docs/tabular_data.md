@@ -9,6 +9,8 @@ nav_order: 4
 >Nota bene
 >
 >*All column names are case sensitive.*
+>
+>*All Tabular data files __MUST HAVE__ the .xlsx extension and __MUST BE__ stored in the experiment's folder.*
 
 ## Mandatory modifications:
 
